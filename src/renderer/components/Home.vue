@@ -1,143 +1,89 @@
 <template>
     <div class="home">
-        <h2 style="font-size: 100px" @click="selectDir">欢迎使用</h2>
-        <!-- <div v-for="(item,index) in Files" :key="index">{{item.name}}</div> -->
-        <file-list
-            v-if="Files"
-            :list="Files"
-            :thumbnailsPath="thumbnailsPath"
-        />
+        <!-- <h2 style="font-size: 100px" @click="selectDir">欢迎使用</h2> -->
+        <div class="menus">
+            <menus @updateFiles="updateFiles" />
+        </div>
+        <div class="file">
+            <file-list :list="Files" :thumbnailsPath="thumbnailsPath" />
+        </div>
     </div>
 </template>
 <script>
-import { mapGetters } from "vuex";
 import FileListEm from "@/components/Home/FileList.vue";
+import Menus from "@/components/Home/Menus.vue";
+import { ipcRenderer } from "electron";
+import { ipcCmdOnce } from "../renderer-tools";
 
-import FsWorker from "worker-loader!./fs-worker.js";
-import GmWorker from "worker-loader!./gm-worker.js";
-
-import { log } from "util";
-
-const { remote } = require("electron");
-
-const userDataPath = remote.app.getPath("userData");
-const thumbnailsPath = userDataPath + "/thumbnails";
-
-const fsWorker = new FsWorker();
-
-let FileList = [];
 export default {
     name: "Home",
     components: {
         "file-list": FileListEm,
+        menus: Menus,
     },
     data() {
         return {
-            Files: {
-                contents: {},
-            },
-            thumbnailsPath,
-            threadPool: {},
+            FilesArray: [],
+            Files: {},
+            thumbnailsPath: "",
         };
     },
-    computed: {
-        ...mapGetters(["testState"]),
-    },
-    mounted() {
-        console.log(this.testState);
-        // this.main();
-        fsWorker.onmessage = (e) => {
-            const data = e.data;
-            switch (data.type) {
-                case "folder":
-                    console.info("读取目录树完毕");
-                    this.Files = {
-                        contents: data.files,
-                    };
-                    this.getFileList();
-                    break;
-                case "FileList":
-                    FileList = data.FileList;
-                    // 开始生成缩略图 6线程
-                    this.startThumWorkers(6);
-                    break;
-                default:
-                    console.log("======");
-                    break;
-            }
+    computed: {},
+    async mounted() {
+        const cmd = {
+            cmd: "getThumbnailsPath",
         };
-        // fsWorker.onerror = function (e) {
-        // console.log(e);
-        // };
+        ipcCmdOnce(ipcRenderer, cmd).then((res) => {
+            this.thumbnailsPath = res.arg;
+        });
+        // setTimeout(() => {
+        //     delete this.Files["C:/Users/GF/Desktop/1/"];
+        //     // 结尾带/和不带/变来变去，得统一
+        //     setTimeout(() => {
+        //         console.log(this.Files);
+        //     }, 1000);
+        // }, 4000);
     },
     methods: {
-        main(path) {
-            // 选取目录
-            const folderPath = "c:/Users/GF/Desktop/";
-            fsWorker.postMessage({
-                cmd: "readdir",
-                path: path,
-            });
-        },
-        async selectDir() {
-            for (let i in this.threadPool) {
-                this.threadPool[i] && this.threadPool[i].terminate();
-            }
-            const result = await remote.dialog.showOpenDialog({
-                properties: ["openDirectory"],
-            });
-            // console.log(result.filePaths[0])
-            result.filePaths[0] && this.main(result.filePaths[0]);
-        },
-        startThumWorkers(threadNumber) {
-            const ths = threadNumber || 1;
-            const threadPool = {};
-            const FileListLength = FileList.length;
+        updateFiles({ files, cmd }) {
+            // 文件夹最后带不带 / 是个问题
+            if (cmd === "delete") {
+                console.log(this.Files, files.path, cmd);
+                const name = files.path + "/";
 
-            // 分配图像到线程
-            let m = parseInt(FileListLength / ths);
-            let n = FileListLength % ths;
-            let startIndex = 0;
-            let nextIndex = 0;
-
-            for (let i = 0; i < ths; i++) {
-                threadPool[i] = new GmWorker();
-                let list = [];
-                if (ths === 1) {
-                    list = FileList;
-                } else {
-                    if (i === ths - 1) {
-                        m += n;
+                this.$delete(this.Files, name);
+                this.$nextTick(() => {
+                    this.$forceUpdate();
+                    for (let i in this.Files) {
+                        console.log(i, name, i == name, i === name);
                     }
-                    nextIndex = startIndex + m;
-                    list = FileList.slice(startIndex, nextIndex);
-                    startIndex = nextIndex;
-                }
-                threadPool[i].postMessage({
-                    thumbnailsPath,
-                    FileList: list,
-                    threadId: i,
+                    console.log(this.Files, name, cmd);
                 });
-            }
+            } else {
+                // console.log('222222',this.Files, files.path, cmd);
 
-            this.threadPool = threadPool;
-        },
-        getFileList() {
-            // worker读取选中目录中所有图片
-            fsWorker.postMessage({
-                cmd: "getFileList",
-                listObject: this.Files.contents,
-            });
+                this.Files[files.path] = files;
+                this.$set(this.Files, files.name, files);
+            }
         },
     },
 };
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .home {
     position: fixed;
     width: 100vw;
     height: 100vh;
-    overflow-y: scroll;
-    // background-color: red;
+    display: flex;
+    .menus {
+        width: 200px;
+        height: 100%;
+        border-right: solid 1px #cecece;
+    }
+    .file {
+        width: calc(100% - 200px);
+        height: 100%;
+        overflow-y: scroll;
+    }
 }
 </style>

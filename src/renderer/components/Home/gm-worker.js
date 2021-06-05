@@ -5,10 +5,10 @@
 // 常规引入在开发时，会提示 Uncaught Error: Cannot find module 'sharp'；
 // 可能是webpack的问题
 // 
-const sharp = require(process.env.NODE_ENV !== 'production' ? 'C:/Users/GF/Desktop/elec/node_modules/sharp' : 'sharp')
+const sharp = require(process.env.NODE_ENV !== 'production' ? '../../../../node_modules/sharp' : 'sharp')
 // 暂时解决
 
-import { hashCode } from '../tools'
+import { hashCode } from '../../../common-tools'
 import fs from "fs";
 let thumbnailsPath = '', FileList = []
 
@@ -31,6 +31,7 @@ self.onmessage = async e => {
                     // gif需要另外处理，sharp要处理gif需要额外安装依赖
                     let imgName = hashCode(path) + '.webp'
                     if (!(thumbList.includes(imgName))) {
+                        // resize为异步过程，同时处理过多图片会爆
                         await resizeImg(path, imgName, i)
                     }
                 }

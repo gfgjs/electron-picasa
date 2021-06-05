@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { hashCode } from '../tools'
+import { hashCode } from '../../../common-tools'
 
 self.onmessage = e => {
     const data = e.data
@@ -11,6 +11,7 @@ self.onmessage = e => {
         case 'getFileList':
             const list = []
             getFileList(data.listObject, list)
+
             self.postMessage({
                 type: 'FileList',
                 FileList: list
@@ -73,6 +74,8 @@ function readdir(selectedPath) {
     })
 }
 function getFolderContent(basePath, name) {
+    basePath = basePath.replace(/\\/g,'/')
+
     let obj = {};
     let path = basePath + name;
 
@@ -84,7 +87,6 @@ function getFolderContent(basePath, name) {
                 path,
                 type: "file",
                 pathHash: hashCode(path) + '.webp',
-                // path64: (new Buffer(path).toString('base64')).replace(/\//g,'')
             };
         }
     } else if (isDir(path)) {

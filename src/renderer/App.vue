@@ -5,6 +5,10 @@
 </template>
 
 <script>
+
+// import store from "../main/store";
+// console.log(store.ccc,'--')
+
   export default {
     name: 'elec'
   }
@@ -15,6 +19,6 @@
   *{
     margin: 0;
     padding: 0;
-    font-size: 0;
+
   }
 </style>

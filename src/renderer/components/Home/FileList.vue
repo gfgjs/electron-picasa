@@ -1,14 +1,14 @@
 <template>
     <div class="file-list" v-if="list">
         <div class="item" v-for="(item, index) in list" :key="index">
-            <!-- <p>{{ item.name }}</p> -->
+            <!-- <p style="font-size:20px;">{{ item.name }}</p> -->
             <!-- <div class="img-box" v-if="item.pathHash"> -->
-                <img
+            <img
                 v-if="item.pathHash"
-                    v-lazy="thumbnailsPath +'/' +item.pathHash"
-                    :onerror="defaultImg"
-                    :key='item.pathHash'
-                />
+                v-lazy="thumbnailsPath + '/' + item.pathHash"
+                :onerror="defaultImg"
+                :key="item.pathHash"
+            />
             <!-- </div> -->
             <file-list
                 v-if="item.children"
@@ -21,10 +21,11 @@
 <script>
 
 //  +'?t=' +Math.random()
-import FileList from "./FileList";
+// import FileList from "./FileList";
 import defaultImg from "../../assets/default.png";
 export default {
-    name: "FileList",
+    // name: "item-component",
+    name:'FileList',
     data() {
         return {
             defaultImg: "this.src='" + defaultImg + "'",
@@ -33,10 +34,22 @@ export default {
     // components: {
     //     "file-list": FileList,
     // },
-    props: {
-        list: [Object, Array],
-        thumbnailsPath: [String],
-    },
+    props:['list','thumbnailsPath'],
+    // props: {
+    //     list: [Object, Array],
+    //     thumbnailsPath: [String],
+    //     // index: {
+    //     //     // index of current item
+    //     //     type: Number,
+    //     // },
+    //     // source: {
+    //     //     // here is: {uid: 'unique_1', text: 'abc'}
+    //     //     type: Object,
+    //     //     default() {
+    //     //         return {};
+    //     //     },
+    //     // },
+    // },
     mounted() {
         // console.log(this.list);
     },
@@ -47,8 +60,9 @@ export default {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    font-size: 0;
     // .img-box,
-   img {
+    img {
         max-width: 96vw;
         width: auto;
         height: 320px;
@@ -56,5 +70,5 @@ export default {
         float: left;
     }
 }
- 
+
 </style>
