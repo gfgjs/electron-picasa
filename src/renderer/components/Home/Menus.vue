@@ -1,11 +1,14 @@
 <template>
     <div class="menus-list">
         <div v-for="item in userAlbums" :key="item">
-            <button @click="deleteAlbum(item)">删除</button
-            ><code>{{ item }}</code>
+            <button @click="deleteAlbum(item)">删除</button>
+            <code>{{ item }}</code>
+            <div style="width: 100%; height: 100px" @click="deleteAlbum(item)">
+                删除
+            </div>
         </div>
         <button @click="selectDir">添加文件夹</button>
-        <button @click="confirmAlbums">刷新相册</button>
+        <button @click="refreshAlbums">刷新相册</button>
     </div>
 </template>
 <script>
@@ -14,14 +17,12 @@ import FileListEm from "@/components/Home/FileList.vue";
 
 import FsWorker from "worker-loader!./fs-worker.js";
 import GmWorker from "worker-loader!./gm-worker.js";
-import { ipcCmdOnce } from "../../renderer-tools";
-
-import { log } from "util";
 
 const { remote, ipcRenderer } = require("electron");
+const ipc = ipcRenderer;
 
-const userDataPath = remote.app.getPath("userData");
-const thumbnailsPath = userDataPath + "/thumbnails";
+// const userDataPath = remote.app.getPath("userData");
+// const thumbnailsPath = userDataPath + "/thumbnails";
 
 const fsWorker = new FsWorker();
 
@@ -37,7 +38,7 @@ export default {
                 children: {},
                 name: "",
             },
-            thumbnailsPath,
+            thumbnailsPath: "",
             threadPool: {},
             userAlbums: {},
         };
@@ -46,16 +47,15 @@ export default {
         ...mapGetters(["testState"]),
     },
     async mounted() {
-        // const foo = await ipcRenderer.invoke("setStoreValue", ts+'11111111', ts);
-
+        // console.log(await ipc.invoke("getStoreValue", "userAlbums"))
+        // return
         fsWorker.onmessage = (e) => {
             const data = e.data;
             switch (data.type) {
                 case "folder":
-                    console.info("读取目录树完毕");
-                    const files = data.files;
-                    this.sendFilesToParent(files);
-                    this.getFileList(files);
+                    const folder = data.folder;
+                    this.sendFilesToParent(folder);
+                    this.getFileList(folder);
                     break;
                 case "FileList":
                     FileList = data.FileList;
@@ -70,33 +70,31 @@ export default {
         fsWorker.onerror = function (e) {
             // console.log(e);
         };
-        ipcCmdOnce(ipcRenderer, { cmd: "getUserAlbums" }).then(({ arg }) => {
-            this.changeAlbums(arg, true);
-            // 首次进入自动刷新一次相册
-        });
+
+        this.thumbnailsPath =
+            (await ipc.invoke("getUserDataPath")) + "/thumbnails";
+
+        this.changeAlbums(
+            await ipc.invoke("getStoreValue", "userAlbums"),
+            true
+        );
+        // 首次进入自动刷新一次相册
     },
     methods: {
         deleteAlbum(item) {
             this.$delete(this.userAlbums, item);
             this.sendFilesToParent({ path: item }, "delete");
-
-            ipcCmdOnce(ipcRenderer, {
-                cmd: "deleteUserAlbums",
-                name: item,
-            }).then(({ arg }) => {
-                this.changeAlbums(arg);
-                // 删除后是否需要自动刷新相册？
-            });
             // this.changeAlbums(this.userAlbums);
+
+            ipc.invoke('setStoreValue','userAlbums',this.userAlbums)
         },
         changeAlbums(albums, autoRefresh) {
             if (typeof albums === "object") {
                 this.userAlbums = albums;
-                // console.log(this.userAlbums, "this.userAlbums");
 
                 // 需要手动点击刷新相册
                 this.$nextTick(() => {
-                    autoRefresh && this.confirmAlbums();
+                    autoRefresh && this.refreshAlbums();
                     // state更新后 刷新相册 按钮才可以点击
                 });
             }
@@ -106,20 +104,43 @@ export default {
                 properties: ["openDirectory"],
             });
             const paths = result.filePaths.map((item) => {
-                console.log(item.split("\\").join("/"));
+                // console.log(item.split("\\").join("/"));
 
-                return item.split("\\").join("/");
+                return item.split("\\").join("/")+'/';
             });
-            if (result.filePaths.length) {
-                ipcCmdOnce(ipcRenderer, {
-                    cmd: "addUserAlbums",
-                    filePaths: paths || result.filePaths,
-                }).then(({ arg }) => {
-                    this.changeAlbums(arg);
+
+            if (paths.length) {
+                let albums = await ipc.invoke("getStoreValue", "userAlbums");
+
+                paths.forEach((item) => {
+                    albums[item] = item;
                 });
+
+                let check = [];
+                for (let i in albums) {
+                    check.push(albums[i]);
+                }
+                check.sort((a, b) => a.length - b.length);
+
+                for (let i in check) {
+                    for (let j in albums) {
+                        if (check[i] === albums[j]) {
+                        } else {
+                            if (albums[j].includes(check[i])) {
+                                delete albums[j];
+                            }
+                        }
+                    }
+                }
+                this.changeAlbums(albums);
+                console.log(
+                    'ipc.invoke("setStoreValue", "userAlbums", albums)',
+                    JSON.parse(JSON.stringify(albums))
+                );
+                await ipc.invoke("setStoreValue", "userAlbums", albums);
             }
         },
-        confirmAlbums() {
+        refreshAlbums() {
             console.log("刷新相册");
             for (let i in this.threadPool) {
                 // console.log(this.threadPool[i]);
@@ -135,7 +156,7 @@ export default {
             // console.log(paths);
             // 选取目录
             // 可以设置一个示例目录
-            const folderPath = "c:/Users/GF/Desktop/";
+            // const folderPath = "c:/Users/GF/Desktop/";
         },
         startThumWorkers(threadNumber, fileList) {
             const ths = threadNumber || 1;
@@ -162,7 +183,7 @@ export default {
                     startIndex = nextIndex;
                 }
                 threadPool[i].postMessage({
-                    thumbnailsPath,
+                    thumbnailsPath: this.thumbnailsPath,
                     FileList: list,
                     threadId: i,
                 });
@@ -177,8 +198,8 @@ export default {
                 listObject: files,
             });
         },
-        sendFilesToParent(files, cmd) {
-            this.$emit("updateFiles", { files, cmd });
+        sendFilesToParent(folder, cmd) {
+            this.$emit("updateFiles", { folder, cmd });
         },
     },
 };

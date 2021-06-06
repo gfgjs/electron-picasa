@@ -57,20 +57,20 @@ function getFileList(obj, list) {
 }
 
 function readdir(selectedPath) {
-    console.time("读取目录树耗时");
-    // const files = getFolderContent(path, "SynologyDrive/pixiv tags");
+    // console.time("读取目录树耗时");
+    console.log('selectedPath',selectedPath);
     const index = selectedPath.lastIndexOf("\\") + 1
     
     const name = selectedPath.substr(index);
     const path = selectedPath.slice(0,index)
     
-    // 递归遍历目录树
-    const files = getFolderContent(path, name);
+    // 遍历目录树
+    const folder = getFolderContent(path, name);
 
-    console.timeEnd("读取目录树耗时");
+    // console.timeEnd("读取目录树耗时");
     self.postMessage({
         type: 'folder',
-        files
+        folder
     })
 }
 function getFolderContent(basePath, name) {
@@ -90,7 +90,6 @@ function getFolderContent(basePath, name) {
             };
         }
     } else if (isDir(path)) {
-        path = path + "/";
         obj = {
             name,
             path,

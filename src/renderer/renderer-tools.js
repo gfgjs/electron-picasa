@@ -1,4 +1,5 @@
-export const ipcCmdOnce = (ipcRenderer, cmd = {}) => {
+import { ipcRenderer } from "electron";
+export const ipcCmdOnce = (arg,cmd = {}) => {
     return new Promise(resolve => {
         cmd.id = Date.now() + '-' + Math.random()
         ipcRenderer.send("fsio-cmd", cmd);

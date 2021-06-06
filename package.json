@@ -17,8 +17,8 @@
     "postinstall": ""
   },
   "build": {
-    "productName": "elec",
-    "appId": "com.example.yourapp",
+    "productName": "epicasa",
+    "appId": "io.cm7.epicasa",
     "directories": {
       "output": "build"
     },

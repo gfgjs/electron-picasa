@@ -3,13 +3,27 @@ import '../renderer/store'
 import fs from 'fs'
 import store from './store'
 
+const userDataPath = app.getPath('userData')
 
+// 创建缩略图目录
+const thumbnailsPath = userDataPath + '/thumbnails'
+
+!fs.existsSync(thumbnailsPath) && fs.mkdirSync(thumbnailsPath)
+
+!fs.existsSync(thumbnailsPath + '/small') && fs.mkdirSync(thumbnailsPath + '/small')
+!fs.existsSync(thumbnailsPath + '/middle') && fs.mkdirSync(thumbnailsPath + '/middle')
+!fs.existsSync(thumbnailsPath + '/large') && fs.mkdirSync(thumbnailsPath + '/large')
+
+// 渲染进程需要的一些工具
+ipcMain.handle('getUserDataPath', (event, key) => {
+  return userDataPath
+});
 ipcMain.handle('getStoreValue', (event, key) => {
   return store.get(key);
 });
 ipcMain.handle('setStoreValue', (event, key, data = '') => {
-  store.set(key, data);
-  return [1, 2]
+  store.set(key, data)
+  return 'complete'
 });
 
 /**
@@ -48,101 +62,6 @@ function createWindow() {
     mainWindow = null
   })
 }
-
-const userDataPath = app.getPath('userData')
-const thumbnailsPath = userDataPath + '/thumbnails'
-if (fs.existsSync(thumbnailsPath)) {
-  // console.log('缩略图目录已存在')
-} else {
-  fs.mkdirSync(thumbnailsPath)
-}
-// store.set('111',{"C:/Users/GF/Desktop/2/2-1/2-1-1":'/1/1/1'})
-ipcMain.on('fsio-cmd', (e, cmd) => {
-  // console.log('main:', cmd)
-
-  switch (cmd.cmd) {
-    case ('getThumbnailsPath'):
-      e.sender.send('fsio-reply' + cmd.id, thumbnailsPath)
-      break;
-    case ('getUserAlbums'):
-      e.sender.send('fsio-reply' + cmd.id, store.get('UserAlbums'))
-      break;
-    case ('deleteUserAlbums'):
-      const albumsOfDelete = store.get('UserAlbums')
-      delete albumsOfDelete[cmd.name]
-      store.set('UserAlbums', albumsOfDelete)
-
-      e.returnValue = albumsOfDelete || ('fsio-reply' + cmd.id, albumsOfDelete)
-      break;
-    case ('addUserAlbums'):
-      let albums = store.get('UserAlbums')
-      cmd.filePaths.forEach(item => {
-        albums[item] = item
-      })
-
-      let check = []
-      for (let i in albums) {
-        check.push(albums[i])
-      }
-      check.sort((a, b) => a.length - b.length)
-
-      for (let i in check) {
-        for (let j in albums) {
-          if (check[i] === albums[j]) {
-          } else {
-            if (albums[j].includes(check[i])) {
-              delete albums[j]
-            }
-          }
-        }
-      }
-
-      store.set('UserAlbums', albums)
-
-      e.returnValue = albums || ('fsio-reply' + cmd.id, albums)
-      // let count = 0;
-      // for (let i in a) {
-      //     const len = a[i].length;
-      //     let flag;
-      //     for (let j in b) {
-      //         count++;
-      //         if (len > b[j].length) {
-      //             if (a[i].includes(b[j])) {
-      //                 flag = true;
-      //                 a[i] = b[j];
-      //                 b.splice(j, 1);
-      //                 console.log(count, j,"change");
-      //                 break;
-      //             }
-      //         } else {
-      //             if (b[j].includes(a[i])) {
-      //                 flag = true;
-      //                 b.splice(j, 1);
-      //                 console.log(count, j,"nochange");
-      //                 break;
-      //             }
-      //         }
-      //     }
-      //     if (flag) {
-      //         continue;
-      //     }
-      // }
-      // a = a.concat(b)
-      // console.log(count, a);
-      // // a自身对比
-      // for (let i in a){
-      //   let A = a[i]
-      //   for(let j in a){
-      //     let B = a[j]
-
-      //   }
-      // }
-
-      break;
-    default:
-      break;
-  }
-})
 
 app.on('ready', createWindow)
 

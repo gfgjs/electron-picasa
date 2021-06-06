@@ -13,7 +13,6 @@
 import FileListEm from "@/components/Home/FileList.vue";
 import Menus from "@/components/Home/Menus.vue";
 import { ipcRenderer } from "electron";
-import { ipcCmdOnce } from "../renderer-tools";
 
 export default {
     name: "Home",
@@ -30,40 +29,15 @@ export default {
     },
     computed: {},
     async mounted() {
-        const cmd = {
-            cmd: "getThumbnailsPath",
-        };
-        ipcCmdOnce(ipcRenderer, cmd).then((res) => {
-            this.thumbnailsPath = res.arg;
-        });
-        // setTimeout(() => {
-        //     delete this.Files["C:/Users/GF/Desktop/1/"];
-        //     // 结尾带/和不带/变来变去，得统一
-        //     setTimeout(() => {
-        //         console.log(this.Files);
-        //     }, 1000);
-        // }, 4000);
+        this.thumbnailsPath =
+            (await ipcRenderer.invoke("getUserDataPath")) + "/thumbnails";
     },
     methods: {
-        updateFiles({ files, cmd }) {
-            // 文件夹最后带不带 / 是个问题
+        updateFiles({ folder, cmd }) {
             if (cmd === "delete") {
-                console.log(this.Files, files.path, cmd);
-                const name = files.path + "/";
-
-                this.$delete(this.Files, name);
-                this.$nextTick(() => {
-                    this.$forceUpdate();
-                    for (let i in this.Files) {
-                        console.log(i, name, i == name, i === name);
-                    }
-                    console.log(this.Files, name, cmd);
-                });
+                this.$delete(this.Files, folder.path);
             } else {
-                // console.log('222222',this.Files, files.path, cmd);
-
-                this.Files[files.path] = files;
-                this.$set(this.Files, files.name, files);
+                this.$set(this.Files, folder.path, folder);
             }
         },
     },
