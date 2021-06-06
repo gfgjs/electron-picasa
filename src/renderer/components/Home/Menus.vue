@@ -47,20 +47,42 @@ export default {
         ...mapGetters(["testState"]),
     },
     async mounted() {
-        // console.log(await ipc.invoke("getStoreValue", "userAlbums"))
-        // return
+        // this.timeTestStr();
+        this.timeTestStr();
+
         fsWorker.onmessage = (e) => {
             const data = e.data;
             switch (data.type) {
                 case "folder":
-                    const folder = data.folder;
-                    this.sendFilesToParent(folder);
-                    this.getFileList(folder);
+                    // const simdjson = require('simdjson');
+
+                    // const jsonString = "{ \"answer\": 42 }";
+                    // const valid = simdjson.isValid(jsonString); // true
+
+                    // let folder = data.folder;
+                    // this.timeTest(data.folder)
+
+                    // console.log('读store', Date.now());
+                    // folder = ipcRenderer.invoke("getStoreValue", "json");
+
+                    // console.log('写store>序列化', Date.now());
+                    // folder = JSON.stringify(folder);
+                    // console.log(folder);
+
+                    // console.log('写store>源对象', Date.now());
+                    // folder = JSON.stringify(folder);
+
+                    // ipcRenderer.invoke("setStoreValue", "json", folder);
+
+                    // console.timeEnd("传输耗时");
+
+                    // this.sendFilesToParent(folder);
+                    // this.getFileList(folder);
                     break;
                 case "FileList":
                     FileList = data.FileList;
                     // 开始生成缩略图 6线程
-                    this.startThumWorkers(1, data.FileList);
+                    // this.startThumWorkers(1, data.FileList);
                     break;
                 default:
                     console.log("======");
@@ -74,19 +96,68 @@ export default {
         this.thumbnailsPath =
             (await ipc.invoke("getUserDataPath")) + "/thumbnails";
 
-        this.changeAlbums(
-            await ipc.invoke("getStoreValue", "userAlbums"),
-            true
-        );
+        // this.changeAlbums(
+        //     await ipc.invoke("getStoreValue", "userAlbums"),
+        //     true
+        // );
         // 首次进入自动刷新一次相册
     },
     methods: {
+        // ipcRenderer通信传参可以是Promise对象，会自动提取reslove中的数据
+        // ipcRenerder传参应先序列化，否则其本身会之行序列化，但效率较低
+
+        // const simdjson = require('simdjson');
+        // const jsonString = "{ \"answer\": 42 }";
+        // const valid = simdjson.isValid(jsonString); // true
+        async timeTestStr(folder) {
+            // console.log("读store开始 - ", Date.now());
+            folder = await ipcRenderer.invoke(
+                "getStoreValue",
+                "folderJsonStr",
+                Date.now()
+            );
+
+                        console.log( Date.now() - folder.time );
+
+            return
+
+            // console.log("写store>序列化 - 开始", Date.now());
+            ipcRenderer.invoke(
+                "setStoreValue",
+                "folderJsonStr",
+                folder,
+                Date.now()
+            );
+
+            console.timeEnd("传输耗时");
+        },
+
+        async timeTestObj(folder) {
+            // console.log("读store - 开始", Date.now());
+            folder = await ipcRenderer.invoke(
+                "getStoreValue",
+                "folderObject",
+                Date.now()
+            );
+            console.log( Date.now() - folder.time );
+            return
+
+            // console.log("写store>源对象 - 开始", Date.now());
+            ipcRenderer.invoke(
+                "setStoreValue",
+                "folderObject",
+                folder,
+                Date.now()
+            );
+            console.timeEnd("传输耗时");
+        },
+
         deleteAlbum(item) {
             this.$delete(this.userAlbums, item);
             this.sendFilesToParent({ path: item }, "delete");
             // this.changeAlbums(this.userAlbums);
 
-            ipc.invoke('setStoreValue','userAlbums',this.userAlbums)
+            ipc.invoke("setStoreValue", "userAlbums", this.userAlbums);
         },
         changeAlbums(albums, autoRefresh) {
             if (typeof albums === "object") {
@@ -104,9 +175,8 @@ export default {
                 properties: ["openDirectory"],
             });
             const paths = result.filePaths.map((item) => {
-                // console.log(item.split("\\").join("/"));
-
-                return item.split("\\").join("/")+'/';
+                return item.split("\\").join("/");
+                // + "/";
             });
 
             if (paths.length) {
@@ -148,6 +218,9 @@ export default {
             }
             this.threadPool = [];
             for (let i in this.userAlbums) {
+                // ipcRenderer.invoke("setStoreValue", "json", "");
+                console.time("传输耗时");
+
                 fsWorker.postMessage({
                     cmd: "readdir",
                     path: i,
@@ -193,6 +266,7 @@ export default {
         },
         getFileList(files) {
             // worker读取选中目录中所有图片
+
             fsWorker.postMessage({
                 cmd: "getFileList",
                 listObject: files,
@@ -205,6 +279,24 @@ export default {
 };
 </script>
 <style lang="scss">
+.ani {
+    animation: ani 30000000ms linear infinite;
+    width: 100px;
+    height: 100px;
+    background-color: aquamarine;
+}
+
+@keyframes ani {
+    0% {
+        transform: rotate(0);
+    }
+    50% {
+        // transform: rotate(360deg);
+    }
+    100% {
+        transform: rotate(7200000deg);
+    }
+}
 .home {
     position: fixed;
     width: 100vw;

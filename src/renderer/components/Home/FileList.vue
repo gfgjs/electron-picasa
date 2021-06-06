@@ -51,7 +51,7 @@ export default {
     //     // },
     // },
     mounted() {
-        // console.log(this.list);
+        // console.log(JSON.parse(JSON.stringify(this.list)));
     },
 };
 </script>

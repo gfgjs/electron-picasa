@@ -32,7 +32,7 @@ self.onmessage = e => {
                         ThumbList: []
                     })
                     throw err
-                }else{
+                } else {
                     self.postMessage({
                         type: 'ThumbList',
                         ThumbList: files
@@ -47,6 +47,7 @@ self.onmessage = e => {
 }
 
 function getFileList(obj, list) {
+    // console.log(obj);
     if (obj.type === 'file') {
         list.push(obj.path)
     } else if (obj.type === 'dir') {
@@ -56,52 +57,60 @@ function getFileList(obj, list) {
     }
 }
 
-function readdir(selectedPath) {
-    // console.time("读取目录树耗时");
-    console.log('selectedPath',selectedPath);
-    const index = selectedPath.lastIndexOf("\\") + 1
-    
-    const name = selectedPath.substr(index);
-    const path = selectedPath.slice(0,index)
-    
+function readdir(path) {
+    console.time("读取目录树耗时");
+    const pathSplit = path.split('/')
+    const name = pathSplit[pathSplit.length - 1]
+
     // 遍历目录树
     const folder = getFolderContent(path, name);
+    console.log(folder);
 
-    // console.timeEnd("读取目录树耗时");
+    console.timeEnd("读取目录树耗时");
+
     self.postMessage({
         type: 'folder',
         folder
     })
 }
-function getFolderContent(basePath, name) {
-    basePath = basePath.replace(/\\/g,'/')
+function getFolderContent(path, name) {
 
-    let obj = {};
-    let path = basePath + name;
 
-    if (isFile(path)) {
-        let ext = path.substr(path.lastIndexOf(".") + 1);
-        if (ext && 'jpg jpeg gif png'.includes(ext.toLowerCase())) {
+    // if(fs.existsSync(path)){
+    try {
+        let obj = {}
+        const stat = fs.statSync(path)
+
+        if (stat.isFile()) {
+            let ext = path.substr(path.lastIndexOf(".") + 1);
+            // console.log(ext);
+            if (ext && 'jpg jpeg gif png'.includes(ext.toLowerCase())) {
+                obj = {
+                    name,
+                    path,
+                    type: "file",
+                    pathHash: hashCode(path) + '.webp',
+                };
+            }
+        } else if (stat.isDirectory()) {
             obj = {
                 name,
                 path,
-                type: "file",
-                pathHash: hashCode(path) + '.webp',
+                children: {},
+                type: "dir"
             };
+            const folder = fs.readdirSync(path);
+            folder.forEach((item) => {
+                obj.children[item] = getFolderContent(path + '/' + item, name);
+            })
         }
-    } else if (isDir(path)) {
-        obj = {
-            name,
-            path,
-            children: {},
-            type: "dir",
-        };
-        const folder = fs.readdirSync(path);
-        folder.forEach((item, index) => {
-            obj.children[item] = getFolderContent(path, item);
-        });
+        Object.assign(obj,stat)
+
+        return obj
+    } catch (e) {
+        //   console.error(e);
     }
-    return obj;
+    // }
 }
 function isDir(path) {
     const stat = fs.statSync(path);
