@@ -1,20 +1,22 @@
 import fs from 'fs'
 import { hashCode } from '../../../common-tools'
 
+
 self.onmessage = e => {
-    const data = e.data
+    let data = e.data
 
     switch (data.cmd) {
         case 'readdir':
-            readdir(data.path)
+            readdir(data.paths)
             break
         case 'getFileList':
-            const list = []
-            getFileList(data.listObject, list)
+            const LIST = []
+            // 树结构目录一维化
+            getFileList(data.listArray, LIST)
 
             self.postMessage({
                 type: 'FileList',
-                FileList: list
+                FileList: LIST
             })
             break
         case 'getThumbList':
@@ -41,41 +43,42 @@ self.onmessage = e => {
             })
             break
         default:
-            console.log(3)
+            console.log('default')
             break
     }
 }
 
-function getFileList(obj, list) {
-    // console.log(obj);
+function getFileList(obj, LIST) {
     if (obj.type === 'file') {
-        list.push(obj.path)
+        LIST.push(obj.path)
     } else if (obj.type === 'dir') {
         for (let i in obj.children) {
-            getFileList(obj.children[i], list)
+            getFileList(obj.children[i], LIST)
         }
     }
 }
 
-function readdir(path) {
-    console.time("读取目录树耗时");
-    const pathSplit = path.split('/')
-    const name = pathSplit[pathSplit.length - 1]
+function readdir(paths) {
+    console.time("读取目录耗时");
+    let folder = []
 
-    // 遍历目录树
-    const folder = getFolderContent(path, name);
-    console.log(folder);
+    for (let i in paths) {
+        const path = i
+        const pathSplit = path.split('/')
+        const name = pathSplit[pathSplit.length - 1]
 
-    console.timeEnd("读取目录树耗时");
+        // 遍历目录树
+        folder = getFolderContent(path, name);
+    }
+
+    console.timeEnd("读取目录耗时");
 
     self.postMessage({
         type: 'folder',
-        folder
+        folderJsonStr: folder
     })
 }
 function getFolderContent(path, name) {
-
-
     // if(fs.existsSync(path)){
     try {
         let obj = {}
@@ -93,6 +96,7 @@ function getFolderContent(path, name) {
                 };
             }
         } else if (stat.isDirectory()) {
+            // console.log(name);
             obj = {
                 name,
                 path,
@@ -101,11 +105,13 @@ function getFolderContent(path, name) {
             };
             const folder = fs.readdirSync(path);
             folder.forEach((item) => {
-                obj.children[item] = getFolderContent(path + '/' + item, name);
+                obj.children[item] = getFolderContent(path + '/' + item, item);
             })
         }
-        Object.assign(obj,stat)
-
+        // console.log(stat);
+        // 应附加文件信息，但文件信息无需存入store，因为可能变更
+        // 此方法耗时
+        // Object.assign(obj)
         return obj
     } catch (e) {
         //   console.error(e);

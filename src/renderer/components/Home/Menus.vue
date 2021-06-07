@@ -1,14 +1,14 @@
 <template>
     <div class="menus-list">
-        <div v-for="item in userAlbums" :key="item">
-            <button @click="deleteAlbum(item)">删除</button>
+        <div v-for="(item, index) in userAlbums" :key="index">
+            <el-button type="warning" size="default" @click="deleteAlbum(item)"
+                >删除</el-button
+            >
+
             <code>{{ item }}</code>
-            <div style="width: 100%; height: 100px" @click="deleteAlbum(item)">
-                删除
-            </div>
         </div>
-        <button @click="selectDir">添加文件夹</button>
-        <button @click="refreshAlbums">刷新相册</button>
+        <el-button type="primary" @click="selectDir">添加文件夹</el-button>
+        <el-button type="success" @click="refreshAlbums">刷新相册</el-button>
     </div>
 </template>
 <script>
@@ -20,13 +20,8 @@ import GmWorker from "worker-loader!./gm-worker.js";
 
 const { remote, ipcRenderer } = require("electron");
 const ipc = ipcRenderer;
-
-// const userDataPath = remote.app.getPath("userData");
-// const thumbnailsPath = userDataPath + "/thumbnails";
-
 const fsWorker = new FsWorker();
 
-let FileList = [];
 export default {
     name: "Menus",
     components: {
@@ -47,45 +42,26 @@ export default {
         ...mapGetters(["testState"]),
     },
     async mounted() {
-        // this.timeTestStr();
-        this.timeTestStr();
-
         fsWorker.onmessage = (e) => {
-            const data = e.data;
+            let data = e.data;
+
             switch (data.type) {
                 case "folder":
-                    // const simdjson = require('simdjson');
+                    //step-2：将所有目录渲染，
+                    const folder = data.folderJsonStr;
 
-                    // const jsonString = "{ \"answer\": 42 }";
-                    // const valid = simdjson.isValid(jsonString); // true
-
-                    // let folder = data.folder;
-                    // this.timeTest(data.folder)
-
-                    // console.log('读store', Date.now());
-                    // folder = ipcRenderer.invoke("getStoreValue", "json");
-
-                    // console.log('写store>序列化', Date.now());
-                    // folder = JSON.stringify(folder);
-                    // console.log(folder);
-
-                    // console.log('写store>源对象', Date.now());
-                    // folder = JSON.stringify(folder);
-
-                    // ipcRenderer.invoke("setStoreValue", "json", folder);
-
-                    // console.timeEnd("传输耗时");
-
-                    // this.sendFilesToParent(folder);
-                    // this.getFileList(folder);
+                    this.updateRender(folder);
+                    // 应异步将新的目录表存入e-store
+                    // 应存入另一个e-store文件
+                    // ipc.invoke('setStoreValue','folderJsonStr',folderJsonStr)
                     break;
                 case "FileList":
-                    FileList = data.FileList;
-                    // 开始生成缩略图 6线程
-                    // this.startThumWorkers(1, data.FileList);
+                    // step-5：worker处理完树结构，返回一维数组
+                    // 开始生成缩略图 可选多线程
+
+                    this.startThumWorkers(6, data.FileList);
                     break;
                 default:
-                    console.log("======");
                     break;
             }
         };
@@ -96,62 +72,30 @@ export default {
         this.thumbnailsPath =
             (await ipc.invoke("getUserDataPath")) + "/thumbnails";
 
-        // this.changeAlbums(
-        //     await ipc.invoke("getStoreValue", "userAlbums"),
-        //     true
-        // );
         // 首次进入自动刷新一次相册
+        // 尝试从electron-store中读取目录表
+        // folder = await ipcRenderer.invoke(
+        //     "getStoreValue",
+        //     "folderJsonStr"
+        // );
+        // folder = JSON.parse(folder);
+
+        this.changeAlbums(
+            await ipc.invoke("getStoreValue", "userAlbums"),
+            true
+        );
     },
     methods: {
         // ipcRenderer通信传参可以是Promise对象，会自动提取reslove中的数据
         // ipcRenerder传参应先序列化，否则其本身会之行序列化，但效率较低
 
-        // const simdjson = require('simdjson');
-        // const jsonString = "{ \"answer\": 42 }";
-        // const valid = simdjson.isValid(jsonString); // true
-        async timeTestStr(folder) {
-            // console.log("读store开始 - ", Date.now());
-            folder = await ipcRenderer.invoke(
-                "getStoreValue",
-                "folderJsonStr",
-                Date.now()
-            );
-
-                        console.log( Date.now() - folder.time );
-
-            return
-
-            // console.log("写store>序列化 - 开始", Date.now());
-            ipcRenderer.invoke(
-                "setStoreValue",
-                "folderJsonStr",
-                folder,
-                Date.now()
-            );
-
-            console.timeEnd("传输耗时");
+        async updateRender(folder) {
+            // 将目录渲染到视图
+            // 应分片渲染
+            this.sendFilesToParent(folder);
+            // step-3：整理文件目录以开始生成缩略图
+            this.getFileList(folder);
         },
-
-        async timeTestObj(folder) {
-            // console.log("读store - 开始", Date.now());
-            folder = await ipcRenderer.invoke(
-                "getStoreValue",
-                "folderObject",
-                Date.now()
-            );
-            console.log( Date.now() - folder.time );
-            return
-
-            // console.log("写store>源对象 - 开始", Date.now());
-            ipcRenderer.invoke(
-                "setStoreValue",
-                "folderObject",
-                folder,
-                Date.now()
-            );
-            console.timeEnd("传输耗时");
-        },
-
         deleteAlbum(item) {
             this.$delete(this.userAlbums, item);
             this.sendFilesToParent({ path: item }, "delete");
@@ -203,29 +147,22 @@ export default {
                     }
                 }
                 this.changeAlbums(albums);
-                console.log(
-                    'ipc.invoke("setStoreValue", "userAlbums", albums)',
-                    JSON.parse(JSON.stringify(albums))
-                );
-                await ipc.invoke("setStoreValue", "userAlbums", albums);
+                // 更新e-store中的用户相册
+                ipc.invoke("setStoreValue", "userAlbums", albums);
             }
         },
         refreshAlbums() {
-            console.log("刷新相册");
+            console.log("刷新相册", this.userAlbums);
             for (let i in this.threadPool) {
                 // console.log(this.threadPool[i]);
                 this.threadPool[i] && this.threadPool[i].terminate();
             }
             this.threadPool = [];
-            for (let i in this.userAlbums) {
-                // ipcRenderer.invoke("setStoreValue", "json", "");
-                console.time("传输耗时");
-
-                fsWorker.postMessage({
-                    cmd: "readdir",
-                    path: i,
-                });
-            }
+            //step-1：读取相册目录及其子目录
+            fsWorker.postMessage({
+                cmd: "readdir",
+                paths: this.userAlbums,
+            });
             // console.log(paths);
             // 选取目录
             // 可以设置一个示例目录
@@ -266,10 +203,11 @@ export default {
         },
         getFileList(files) {
             // worker读取选中目录中所有图片
-
+            // step-4：发送所有目录到worker，降维目录树对象
             fsWorker.postMessage({
                 cmd: "getFileList",
-                listObject: files,
+                // listObject: files,
+                listArray: files,
             });
         },
         sendFilesToParent(folder, cmd) {

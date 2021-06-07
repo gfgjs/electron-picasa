@@ -3,7 +3,7 @@ import '../renderer/store'
 import fs from 'fs'
 import store from './store'
 
-const userDataPath = app.getPath('userData')
+const userDataPath = app.getPath('userData').replace(/\\/g,'/')
 
 // 创建缩略图目录
 const thumbnailsPath = userDataPath + '/thumbnails'
@@ -19,19 +19,12 @@ ipcMain.handle('getUserDataPath', (event, key) => {
   return userDataPath
 });
 
-ipcMain.handle('getStoreValue', (event, key, timestamp) => {
-  console.log("读store - 接收到", Date.now() - timestamp)
-  console.time("store.get(key)");
-  const result = store.get(key)
-  console.timeEnd("store.get(key)");
-  return { result,time:Date.now()};
+ipcMain.handle('getStoreValue', (event, key) => {
+  return store.get(key)
 });
 
-ipcMain.handle('setStoreValue', (event, key, data = '', timestamp) => {
-  console.log("写store - 接收到", Date.now() - timestamp)
-  console.time("store.set(key, data)");
+ipcMain.handle('setStoreValue', (event, key, data = '') => {
   store.set(key, data)
-  console.timeEnd("store.set(key, data)");
   return 'complete'
 });
 

@@ -52,7 +52,9 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
+    "babel-plugin-component": "^1.1.1",
     "electron-store": "^8.0.0",
+    "element-ui": "^2.15.2",
     "gm": "^1.23.1",
     "sharp": "^0.28.3",
     "vue": "^2.5.16",

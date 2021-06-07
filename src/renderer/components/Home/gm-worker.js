@@ -48,8 +48,8 @@ function resizeImg(path, imgName, i) {
     return new Promise((resolve, reject) => {
         const buf = fs.readFileSync(path);
         sharp(buf)
-            .resize(null, 640)
-            .webp({ lossless: false, quality: 60 })
+            .resize(null, 24)
+            .webp({ lossless: false, quality: 20 })
             .toFile(thumbnailsPath + '/' + imgName, function (err, info) {
                 // console.log((info.size / 1000).toFixed(3) + ' kb')
                 if (err) {

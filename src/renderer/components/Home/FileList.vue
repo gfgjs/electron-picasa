@@ -1,31 +1,29 @@
 <template>
     <div class="file-list" v-if="list">
-        <div class="item" v-for="(item, index) in list" :key="index">
-            <!-- <p style="font-size:20px;">{{ item.name }}</p> -->
-            <!-- <div class="img-box" v-if="item.pathHash"> -->
+        <!-- <div class="item" v-for="(item, index) in list" :key="index" 
+        :style="item.pathHash&&`background-image:url('${thumbnailsPath + '/' + item.pathHash}')`"> -->
+        <template v-for="(item, index) in list" >
             <img
                 v-if="item.pathHash"
-                v-lazy="thumbnailsPath + '/' + item.pathHash"
-                :onerror="defaultImg"
+                v-lazy="thumbnailsPath  + item.pathHash"
                 :key="item.pathHash"
             />
-            <!-- </div> -->
             <file-list
+            :key="index"
                 v-if="item.children"
                 :list="item.children"
                 :thumbnailsPath="thumbnailsPath"
             />
-        </div>
+        </template>
     </div>
 </template>
 <script>
-
 //  +'?t=' +Math.random()
 // import FileList from "./FileList";
 import defaultImg from "../../assets/default.png";
 export default {
     // name: "item-component",
-    name:'FileList',
+    name: "FileList",
     data() {
         return {
             defaultImg: "this.src='" + defaultImg + "'",
@@ -34,7 +32,7 @@ export default {
     // components: {
     //     "file-list": FileList,
     // },
-    props:['list','thumbnailsPath'],
+    props: ["list", "thumbnailsPath"],
     // props: {
     //     list: [Object, Array],
     //     thumbnailsPath: [String],
@@ -61,14 +59,14 @@ export default {
     flex-wrap: wrap;
     justify-content: center;
     font-size: 0;
-    // .img-box,
+    width: 100%;
     img {
         max-width: 96vw;
         width: auto;
         height: 320px;
         object-fit: contain;
-        float: left;
+        border-radius: 2px;
+        margin: 2px;
     }
 }
-
 </style>
