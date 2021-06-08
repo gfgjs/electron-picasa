@@ -1,7 +1,6 @@
 import fs from 'fs'
 import { hashCode } from '../../../common-tools'
 
-
 self.onmessage = e => {
     let data = e.data
 
@@ -11,7 +10,7 @@ self.onmessage = e => {
             break
         case 'getFileList':
             const LIST = []
-            // 树结构目录一维化
+                // 树结构目录一维化
             getFileList(data.listArray, LIST)
 
             self.postMessage({
@@ -78,6 +77,7 @@ function readdir(paths) {
         folderJsonStr: folder
     })
 }
+
 function getFolderContent(path, name) {
     // if(fs.existsSync(path)){
     try {
@@ -118,10 +118,12 @@ function getFolderContent(path, name) {
     }
     // }
 }
+
 function isDir(path) {
     const stat = fs.statSync(path);
     return stat.isDirectory();
 }
+
 function isFile(path) {
     const stat = fs.statSync(path);
     return stat.isFile();

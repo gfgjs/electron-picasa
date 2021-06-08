@@ -4,7 +4,6 @@
             <el-button type="warning" size="default" @click="deleteAlbum(item)"
                 >删除</el-button
             >
-
             <code>{{ item }}</code>
         </div>
         <el-button type="primary" @click="selectDir">添加文件夹</el-button>

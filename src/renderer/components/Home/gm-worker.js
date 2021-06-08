@@ -6,18 +6,19 @@
 // 可能是webpack的问题
 // 
 const sharp = require(process.env.NODE_ENV !== 'production' ? '../../../../node_modules/sharp' : 'sharp')
-// 暂时解决
+    // 暂时解决
 
 import { hashCode } from '../../../common-tools'
-import fs from "fs";
-let thumbnailsPath = '', FileList = []
+import fs from "fs"
+let thumbnailsPath = '',
+    FileList = []
 
 self.onmessage = async e => {
     if (e.data.thumbnailsPath && e.data.FileList) {
         thumbnailsPath = e.data.thumbnailsPath
         FileList = e.data.FileList
         const thumbList = fs.readdirSync(thumbnailsPath)
-        // const flag = 'gm线程：' + e.data.threadId + ' ' + '处理数量：' + FileList.length
+            // const flag = 'gm线程：' + e.data.threadId + ' ' + '处理数量：' + FileList.length
 
         // console.log(flag)
         // console.time(flag)
@@ -47,18 +48,21 @@ self.onmessage = async e => {
 function resizeImg(path, imgName, i) {
     return new Promise((resolve, reject) => {
         const buf = fs.readFileSync(path);
-        sharp(buf)
-            .resize(null, 24)
-            .webp({ lossless: false, quality: 20 })
-            .toFile(thumbnailsPath + '/' + imgName, function (err, info) {
+        const img = sharp(buf)
+            .resize(null, 1)
+            .webp({ lossless: false, quality: 1 })
+        try {
+            img.toFile(thumbnailsPath + '/' + imgName, function(err, info) {
                 // console.log((info.size / 1000).toFixed(3) + ' kb')
                 if (err) {
-                    console.log(err, thumbnailsPath + '/' + imgName)
+                    console.log('图片处理错误：', err, path)
                     reject(err)
                 } else {
                     resolve()
-                    // console.log(i,imgName)
                 }
             })
+        } catch (e) {
+            reject(err)
+        }
     })
 }
