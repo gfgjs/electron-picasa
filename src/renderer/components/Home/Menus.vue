@@ -6,39 +6,45 @@
             >
             <code>{{ item }}</code>
         </div> -->
-         <div class="handle-button">
-            <el-button type="primary" size="small" @click="selectDir"
-                >添加文件夹</el-button
-            >
+        <div class="handle">
+            <div class="handle-button">
+                <el-button type="primary" size="small" @click="selectDir"
+                    >添加文件夹</el-button
+                >
 
-            <el-button type="success" size="small" @click="refreshAlbums"
-                >刷新相册</el-button
-            >
+                <el-button type="success" size="small" @click="refreshAlbums"
+                    >刷新相册</el-button
+                >
+            </div>
         </div>
         <el-tree
+            class="folder-tree"
             :data="folderTree"
             :props="defaultProps"
+            @node-click="scrollToFolder"
+            show-checkbox
+  @check-change="handleCheckChange"
         ></el-tree>
-       
     </div>
 </template>
 <script>
-import { mapGetters } from "vuex";
+import { mapGetters, mapActions, mapMutations } from "vuex";
 import { remote, ipcRenderer } from "electron";
-import PromiseWorker from "promise-worker/index.js";
+import PromiseWorker from "promise-worker";
 
 import FileListEm from "@/components/Home/FileList.vue";
 
-import FsWorker from "./fs.worker.js";
-import GmWorker from "./gm.worker.js";
+// import FsWorker from "./fs.worker";
+// import GmWorker from "./gm.worker";
 // 文件处理线程
-import FileWorker from "./file.worker.js";
+import FileWorker from "./file.worker";
+// 图像处理
+import SharpWorker from "./sharp.worker.js";
 
 const ipc = ipcRenderer;
 
 // 页面刷新时，退出程序前，应关闭worker
 const fileWorker = new PromiseWorker(new FileWorker());
-const fsWorker = new FsWorker();
 
 export default {
     name: "Menus",
@@ -65,32 +71,32 @@ export default {
         ...mapGetters(["testState"]),
     },
     async mounted() {
-        fsWorker.onmessage = (e) => {
-            let data = e.data;
+        // fsWorker.onmessage = (e) => {
+        //     let data = e.data;
 
-            switch (data.type) {
-                case "folder":
-                    //step-2：将所有目录渲染，
-                    const folder = data.folderJsonStr;
+        //     switch (data.type) {
+        //         case "folder":
+        //             //step-2：将所有目录渲染，
+        //             const folder = data.folderJsonStr;
 
-                    this.updateRender(folder);
-                    // 应异步将新的目录表存入e-store
-                    // 应存入另一个e-store文件
-                    // ipc.invoke('setStoreValue','folderJsonStr',folderJsonStr)
-                    break;
-                case "FileList":
-                    // step-5：worker处理完树结构，返回一维数组
-                    // 开始生成缩略图 可选多线程
+        //             this.updateRender(folder);
+        //             // 应异步将新的目录表存入e-store
+        //             // 应存入另一个e-store文件
+        //             // ipc.invoke('setStoreValue','folderJsonStr',folderJsonStr)
+        //             break;
+        //         case "FileList":
+        //             // step-5：worker处理完树结构，返回一维数组
+        //             // 开始生成缩略图 可选多线程
 
-                    this.startThumWorkers(6, data.FileList);
-                    break;
-                default:
-                    break;
-            }
-        };
-        fsWorker.onerror = function (e) {
-            // console.log(e);
-        };
+        //             this.startThumWorkers(6, data.FileList);
+        //             break;
+        //         default:
+        //             break;
+        //     }
+        // };
+        // fsWorker.onerror = function (e) {
+        //     // console.log(e);
+        // };
 
         this.thumbnailsPath =
             (await ipc.invoke("getUserDataPath")) + "/thumbnails";
@@ -109,20 +115,20 @@ export default {
         );
     },
     methods: {
+        ...mapActions(["UPDATE_SCROLL_TARGET"]),
+        handleCheckChange(e,f){
+            console.log(e,f);
+        },
+        scrollToFolder(item) {
+            this.UPDATE_SCROLL_TARGET(item);
+        },
         // ipcRenderer通信传参可以是Promise对象，会自动提取reslove中的数据
         // ipcRenerder传参应先序列化，否则其本身会之行序列化，但效率较低
-
-        async updateRender(folder) {
-            // 将目录渲染到视图
-            // 应分片渲染
-            this.sendFilesToParent(folder);
-            // step-3：整理文件目录以开始生成缩略图
-            this.getFileList(folder);
-        },
         deleteAlbum(item) {
             this.$delete(this.userAlbums, item);
             this.sendFilesToParent({ path: item }, "delete");
             // this.changeAlbums(this.userAlbums);
+            // 点击删除时，直接从worker里的list删除，还是重新扫描文件夹？
 
             ipc.invoke("setStoreValue", "userAlbums", this.userAlbums);
         },
@@ -138,6 +144,9 @@ export default {
             }
         },
         async selectDir() {
+            // 选取目录
+            // 可以设置一个示例目录
+
             const result = await remote.dialog.showOpenDialog({
                 properties: ["openDirectory"],
             });
@@ -147,14 +156,15 @@ export default {
             });
 
             if (paths.length) {
+                // 选择目录后去重，如存在父级，将子级移除，仅保留父级
                 let albums = await ipc.invoke("getStoreValue", "userAlbums");
 
                 paths.forEach((item) => {
                     albums[item] = item;
                 });
                 // 去重可能有问题，比如
-                // c:folder
-                // c:folder - 副本，两者应当同级
+                // [c:folder]
+                // [c:folder - 副本]，两者应当同级
 
                 let check = [];
                 for (let i in albums) {
@@ -178,84 +188,74 @@ export default {
             }
         },
         refreshAlbums() {
-            console.log("刷新相册", this.userAlbums);
-            for (let i in this.threadPool) {
-                // console.log(this.threadPool[i]);
-                this.threadPool[i] && this.threadPool[i].terminate();
-            }
-            this.threadPool = [];
-            //step-1：读取相册目录及其子目录
-
+            //step_1：读取相册目录及其子目录
             fileWorker
                 .postMessage({
                     cmd: "getFolderList",
                     paths: this.userAlbums,
                 })
                 .then((res) => {
-                    console.log(res);
+                    // 读取所有图片完毕
                     this.folderTree = res;
+
+                    // 渲染缩略图节点
+                    this.sendFilesToParent();
+                    // 创建缩略图
+                    this.createThumbs();
                 })
                 .catch((e) => {
                     console.log(e);
                 });
-            // fsWorker.postMessage({
-            //     cmd: "readdir",
-            //     paths: this.userAlbums,
-            // });
-            // console.log(paths);
-            // 选取目录
-            // 可以设置一个示例目录
-            // const folderPath = "c:/Users/GF/Desktop/";
+        },
+        sendFilesToParent() {
+            fileWorker
+                .postMessage({
+                    cmd: "getThumbsList",
+                })
+                .then((folder) => {
+                    this.$emit("updateFiles", { folder });
+                });
+        },
+        createThumbs() {
+            // 尝试结束之前运行的worker
+            for (let i in this.threadPool) {
+                this.threadPool[i] && this.threadPool[i].terminate();
+            }
+            // 重置线程池
+            this.threadPool = [];
+            fileWorker.postMessage({ cmd: "getFileList" }).then((res) => {
+                // console.log(res);
+                this.startThumWorkers(4, res);
+            });
         },
         startThumWorkers(threadNumber, fileList) {
-            const ths = threadNumber || 1;
+            const ths = threadNumber || 1; // 并行线程数
             const threadPool = [];
-            const FileListLength = fileList.length;
+            const fileListLength = fileList.length;
+            let stepLength = Math.ceil(fileListLength / ths);
+            let startIndex = 0;
 
             // 分配图像到线程
-            let m = parseInt(FileListLength / ths);
-            let n = FileListLength % ths;
-            let startIndex = 0;
-            let nextIndex = 0;
-
             for (let i = 0; i < ths; i++) {
-                threadPool[i] = new GmWorker();
-                let list = [];
-                if (ths === 1) {
-                    list = fileList;
-                } else {
-                    if (i === ths - 1) {
-                        m += n;
-                    }
-                    nextIndex = startIndex + m;
-                    list = fileList.slice(startIndex, nextIndex);
-                    startIndex = nextIndex;
-                }
+                threadPool[i] = new SharpWorker();
+                // todo 应当接收处理进度显示在页面
                 threadPool[i].postMessage({
                     thumbnailsPath: this.thumbnailsPath,
-                    FileList: list,
+                    fileList: fileList.slice(
+                        startIndex,
+                        startIndex + stepLength
+                    ),
                     threadId: i,
                 });
+                startIndex += stepLength;
             }
 
             this.threadPool = this.threadPool.concat(threadPool);
         },
-        getFileList(files) {
-            // worker读取选中目录中所有图片
-            // step-4：发送所有目录到worker，降维目录树对象
-            fsWorker.postMessage({
-                cmd: "getFileList",
-                // listObject: files,
-                listArray: files,
-            });
-        },
-        sendFilesToParent(folder, cmd) {
-            this.$emit("updateFiles", { folder, cmd });
-        },
     },
 };
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .ani {
     animation: ani 30000000ms linear infinite;
     width: 100px;
@@ -278,14 +278,34 @@ export default {
     /* display: flex; */
     /* flex-direction: column; */
     /* align-items: center; */
-    overflow: scroll;
+    box-sizing: border-box;
     height: 100%;
     width: 100%;
-    .handle-button {
-        display: flex;
-        justify-content: space-around;
-        margin: 10px 0 10px;
+    position: relative;
+
+    .handle {
         width: 100%;
+        height: 20%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        .handle-button {
+            display: flex;
+            justify-content: center;
+        }
+    }
+
+    .folder-tree {
+        width: 100%;
+        height: 80%;
+        overflow: scroll;
+    }
+    .folder-tree::-webkit-scrollbar {
+        width: 6px;
+    }
+    .folder-tree::-webkit-scrollbar-thumb {
+        background-color: #efefef;
+        border-radius: 3px;
     }
 }
 </style>

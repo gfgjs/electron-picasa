@@ -1,12 +1,10 @@
 <template>
     <div class="file-list" v-if="list">
-        <!-- <div class="item" v-for="(item, index) in list" :key="index" 
-        :style="item.pathHash&&`background-image:url('${thumbnailsPath + '/' + item.pathHash}')`"> -->
         <template v-for="(item, index) in list" >
             <img
-                v-if="item.pathHash"
-                v-lazy="thumbnailsPath  + item.pathHash"
-                :key="item.pathHash"
+                v-if="item.hash"
+                v-lazy="thumbnailsPath  + item.hash"
+                :key="item.hash"
             />
             <file-list
             :key="index"
@@ -53,7 +51,7 @@ export default {
     },
 };
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .file-list {
     display: flex;
     flex-wrap: wrap;

@@ -92,7 +92,7 @@ function getFolderContent(path, name) {
                     name,
                     path,
                     type: "file",
-                    pathHash: hashCode(path) + '.webp',
+                    hash: hashCode(path) + '.webp',
                 };
             }
         } else if (stat.isDirectory()) {
