@@ -1,4 +1,4 @@
-# elec
+# epicasa
 
 > An electron-vue project
 

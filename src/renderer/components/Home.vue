@@ -130,7 +130,7 @@ export default {
     height: 100vh;
     display: flex;
     .menus {
-        width: 200px;
+        width: 240px;
         height: 100%;
         border-right: solid 1px #cecece;
     }

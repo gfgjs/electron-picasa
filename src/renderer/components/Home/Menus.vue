@@ -1,24 +1,43 @@
 <template>
     <div class="menus-list">
-        <div v-for="(item, index) in userAlbums" :key="index">
+        <!-- <div v-for="(item, index) in userAlbums" :key="index">
             <el-button type="warning" size="default" @click="deleteAlbum(item)"
                 >删除</el-button
             >
             <code>{{ item }}</code>
+        </div> -->
+         <div class="handle-button">
+            <el-button type="primary" size="small" @click="selectDir"
+                >添加文件夹</el-button
+            >
+
+            <el-button type="success" size="small" @click="refreshAlbums"
+                >刷新相册</el-button
+            >
         </div>
-        <el-button type="primary" @click="selectDir">添加文件夹</el-button>
-        <el-button type="success" @click="refreshAlbums">刷新相册</el-button>
+        <el-tree
+            :data="folderTree"
+            :props="defaultProps"
+        ></el-tree>
+       
     </div>
 </template>
 <script>
 import { mapGetters } from "vuex";
+import { remote, ipcRenderer } from "electron";
+import PromiseWorker from "promise-worker/index.js";
+
 import FileListEm from "@/components/Home/FileList.vue";
 
-import FsWorker from "worker-loader!./fs-worker.js";
-import GmWorker from "worker-loader!./gm-worker.js";
+import FsWorker from "./fs.worker.js";
+import GmWorker from "./gm.worker.js";
+// 文件处理线程
+import FileWorker from "./file.worker.js";
 
-const { remote, ipcRenderer } = require("electron");
 const ipc = ipcRenderer;
+
+// 页面刷新时，退出程序前，应关闭worker
+const fileWorker = new PromiseWorker(new FileWorker());
 const fsWorker = new FsWorker();
 
 export default {
@@ -35,6 +54,11 @@ export default {
             thumbnailsPath: "",
             threadPool: {},
             userAlbums: {},
+            folderTree: [],
+            defaultProps: {
+                children: "children",
+                label: "name",
+            },
         };
     },
     computed: {
@@ -128,6 +152,9 @@ export default {
                 paths.forEach((item) => {
                     albums[item] = item;
                 });
+                // 去重可能有问题，比如
+                // c:folder
+                // c:folder - 副本，两者应当同级
 
                 let check = [];
                 for (let i in albums) {
@@ -158,10 +185,23 @@ export default {
             }
             this.threadPool = [];
             //step-1：读取相册目录及其子目录
-            fsWorker.postMessage({
-                cmd: "readdir",
-                paths: this.userAlbums,
-            });
+
+            fileWorker
+                .postMessage({
+                    cmd: "getFolderList",
+                    paths: this.userAlbums,
+                })
+                .then((res) => {
+                    console.log(res);
+                    this.folderTree = res;
+                })
+                .catch((e) => {
+                    console.log(e);
+                });
+            // fsWorker.postMessage({
+            //     cmd: "readdir",
+            //     paths: this.userAlbums,
+            // });
             // console.log(paths);
             // 选取目录
             // 可以设置一个示例目录
@@ -234,23 +274,18 @@ export default {
         transform: rotate(7200000deg);
     }
 }
-.home {
-    position: fixed;
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    .menus {
-        // max-width: 10%;
-        width: 200px;
-        height: 100%;
-        // background-color: aquamarine;
-        border-right: solid 1px #cecece;
+.menus-list {
+    /* display: flex; */
+    /* flex-direction: column; */
+    /* align-items: center; */
+    overflow: scroll;
+    height: 100%;
+    width: 100%;
+    .handle-button {
+        display: flex;
+        justify-content: space-around;
+        margin: 10px 0 10px;
+        width: 100%;
     }
-    .content {
-        width: calc(100% - 200px);
-        height: 100%;
-        overflow-y: scroll;
-    }
-    // background-color: red;
 }
 </style>
