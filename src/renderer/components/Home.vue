@@ -50,11 +50,13 @@ export default {
     height: 100vh;
     display: flex;
     .menus {
+        box-sizing: border-box;
         width: 240px;
         height: 100%;
         border-right: solid 1px #cecece;
     }
     .file {
+        box-sizing: border-box;
         width: calc(100% - 200px);
         height: 100%;
     }

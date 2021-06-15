@@ -1,6 +1,6 @@
 <template>
     <div class="file-list" v-if="list">
-        <template v-for="item in renderList">
+        <template v-for="(item, index) in renderList">
             <!-- typeof item ==='string'为文件夹分隔符。只有当下一个元素是图片时才渲染这个文件夹分割元素 -->
             <!-- <div
                 class="folder-sign"
@@ -12,16 +12,23 @@
                 v-if="item > 0 && item < 1000001"
                 :id="item"
                 :key="item"
+                @click="clickTitle(item, index)"
             >
-                <!-- :tabindex="item" 可使用 .focus() -->
+                <!-- 添加属性 :tabindex="item" 可使用 .focus() -->
             </div>
-            <img v-else v-lazy="thumbnailsPath + item" :key="item" />
+            <img
+                v-else
+                v-lazy="thumbnailsPath + item"
+                :key="item"
+                :style="imgStyle"
+                @click="clickImg(item, index)"
+            />
         </template>
     </div>
 </template>
 <script>
 // import defaultImg from "../../assets/default.png";
-import { mapGetters } from "vuex";
+import { mapGetters, mapActions } from "vuex";
 export default {
     // name: "item-component",
     name: "FileList",
@@ -30,51 +37,83 @@ export default {
             // defaultImg: "this.src='" + defaultImg + "'",
             renderList: [],
             timer: 0,
-            stepLength: 50,
+            stepLength: 50, // 分片渲染片段长度
+            imgStyle: "", // 可以动态改变缩略图大小
         };
     },
     watch: {
-        scrollTarget(e) {
-            if (e) {
-                // document.getElementById(e.hash).focus();
-                const dom = document.getElementById(e.hash)
-                dom&&dom.scrollIntoView();
+        scrollTarget(target) {
+            if (target) {
+                if (target.action === "scroll-to-img") {
+                    // document.getElementById(e.hash).focus();
+                    const dom = document.getElementById(target.hash);
+                    dom && dom.scrollIntoView();
+                }
             }
         },
-        list(e) {
-            this.renderList = [];
-            this.renderList = this.list
+        list(list) {
+            this.renderList = list;
+
+            // 分片渲染，然鹅没啥用，倒是不会卡住几秒，但加载的时间太长了
+            // this.renderList = [];
             // this.renderDom()
+        },
+        userConfig(config) {
+            console.log(JSON.parse(JSON.stringify(config)));
+            this.imgStyle =
+                "height:" + config.thumbSize * config.thumbSizeBase + "px";
         },
     },
     props: ["list", "thumbnailsPath"],
     mounted() {
+        this.imgStyle =
+            "height:" +
+            this.userConfig.thumbSize * this.userConfig.thumbSizeBase +
+            "px";
+
         // console.log(this.scrollTarget);
         // console.log(JSON.parse(JSON.stringify(this.list)));
     },
     methods: {
+        ...mapActions(["SCROLL_TARGET"]),
+        clickImg(item, index) {
+            // 找到所在目录，并展开在左侧
+            for (let i = index; i >= 0; i--) {
+                const hash = this.renderList[i];
+                if (hash > 0 && hash < 1000001) {
+                    console.log(hash);
+                    this.SCROLL_TARGET({ hash, action: "open-tree" });
+                    break;
+                }
+                console.log(hash);
+            }
+        },
+        clickTitle(item, index) {
+            this.clickImg(item, index);
+        },
         renderDom() {
             cancelAnimationFrame(this.timer);
             this.timer = this.raf();
-            let startIndex=0,length=this.list.length,stepLength=this.stepLength
-            this.raf(startIndex,length,stepLength);
+            let startIndex = 0,
+                length = this.list.length,
+                stepLength = this.stepLength;
+            this.raf(startIndex, length, stepLength);
         },
-        raf(startIndex,length,stepLength) {
+        raf(startIndex, length, stepLength) {
             if (startIndex < length) {
                 this.renderList = this.renderList.concat(
-                    this.list.slice(
-                        startIndex,
-                        startIndex + stepLength
-                    )
+                    this.list.slice(startIndex, startIndex + stepLength)
                 );
                 startIndex += stepLength;
-                return requestAnimationFrame(()=>{this.raf(startIndex,length,stepLength)});
+                return requestAnimationFrame(() => {
+                    this.raf(startIndex, length, stepLength);
+                });
             } else {
             }
         },
     },
     computed: {
-        ...mapGetters(["scrollTarget"]),
+        ...mapGetters(["scrollTarget", "userConfig"]),
     },
 };
 </script>
@@ -87,16 +126,22 @@ export default {
     height: 100%;
     overflow-y: scroll;
     scroll-behavior: smooth;
+    box-sizing: border-box;
+    background-color: #fefefe;
+
     .folder-sign {
         width: 100%;
-        height: 2px;
+        height: 22px;
+        margin: 10px;
+        border-radius: 2px;
         background-color: #efefef;
     }
     img {
+        box-sizing: border-box;
         font-size: 0;
-        max-width: 96vw;
+        max-width: 100%;
         width: auto;
-        height: 320px;
+        height: auto;
         object-fit: contain;
         border-radius: 2px;
         margin: 2px;

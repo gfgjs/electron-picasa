@@ -1,29 +1,45 @@
 <template>
     <div class="menus-list">
-        <!-- <div v-for="(item, index) in userAlbums" :key="index">
-            <el-button type="warning" size="default" @click="deleteAlbum(item)"
-                >删除</el-button
-            >
-            <code>{{ item }}</code>
-        </div> -->
         <div class="handle">
             <div class="handle-button">
                 <el-button type="primary" size="small" @click="selectDir"
                     >添加文件夹</el-button
                 >
-
                 <el-button type="success" size="small" @click="refreshAlbums"
                     >刷新相册</el-button
                 >
             </div>
+            <div class="slider">
+                <div class="slider-item">
+                    <span>质量</span>
+                    <el-slider
+                        @change="thumbQuilatyChange"
+                        v-model="thumbQuilaty"
+                        :min="30"
+                        :max="90"
+                        :step="30"
+                        show-stops
+                    ></el-slider>
+                </div>
+                <div class="slider-item">
+                    <span>大小</span>
+                    <el-slider
+                        @change="thumbSizeChange"
+                        v-model="thumbSize"
+                    ></el-slider>
+                </div>
+            </div>
         </div>
+        <el-button type="primary" @click="expanded = [24]">展开tree</el-button>
         <el-tree
             class="folder-tree"
             :data="folderTree"
             :props="defaultProps"
             @node-click="scrollToFolder"
             show-checkbox
-  @check-change="handleCheckChange"
+            node-key='hash'
+            :default-expanded-keys="[(scrollTarget.action==='open-tree'&&scrollTarget.hash)]"
+            @check-change="handleCheckChange"
         ></el-tree>
     </div>
 </template>
@@ -32,10 +48,6 @@ import { mapGetters, mapActions, mapMutations } from "vuex";
 import { remote, ipcRenderer } from "electron";
 import PromiseWorker from "promise-worker";
 
-import FileListEm from "@/components/Home/FileList.vue";
-
-// import FsWorker from "./fs.worker";
-// import GmWorker from "./gm.worker";
 // 文件处理线程
 import FileWorker from "./file.worker";
 // 图像处理
@@ -48,11 +60,13 @@ const fileWorker = new PromiseWorker(new FileWorker());
 
 export default {
     name: "Menus",
-    components: {
-        "file-list": FileListEm,
-    },
+    components: {},
     data() {
         return {
+            expanded:[],
+            thumbSize: 30, // 显示的缩略图的大小
+            thumbQuilaty: 30, // 生成的缩略图的质量
+
             Files: {
                 children: {},
                 name: "",
@@ -68,46 +82,16 @@ export default {
         };
     },
     computed: {
-        ...mapGetters(["testState"]),
+        ...mapGetters(["testState", "userConfig","scrollTarget"]),
     },
     async mounted() {
-        // fsWorker.onmessage = (e) => {
-        //     let data = e.data;
-
-        //     switch (data.type) {
-        //         case "folder":
-        //             //step-2：将所有目录渲染，
-        //             const folder = data.folderJsonStr;
-
-        //             this.updateRender(folder);
-        //             // 应异步将新的目录表存入e-store
-        //             // 应存入另一个e-store文件
-        //             // ipc.invoke('setStoreValue','folderJsonStr',folderJsonStr)
-        //             break;
-        //         case "FileList":
-        //             // step-5：worker处理完树结构，返回一维数组
-        //             // 开始生成缩略图 可选多线程
-
-        //             this.startThumWorkers(6, data.FileList);
-        //             break;
-        //         default:
-        //             break;
-        //     }
-        // };
-        // fsWorker.onerror = function (e) {
-        //     // console.log(e);
-        // };
+        console.log(this.userConfig);
+        let { thumbSize, thumbQuilaty } = this.userConfig;
+        this.thumbSize = thumbSize || 30;
+        this.thumbQuilaty = thumbQuilaty || 30;
 
         this.thumbnailsPath =
             (await ipc.invoke("getUserDataPath")) + "/thumbnails";
-
-        // 首次进入自动刷新一次相册
-        // 尝试从electron-store中读取目录表
-        // folder = await ipcRenderer.invoke(
-        //     "getStoreValue",
-        //     "folderJsonStr"
-        // );
-        // folder = JSON.parse(folder);
 
         this.changeAlbums(
             await ipc.invoke("getStoreValue", "userAlbums"),
@@ -115,12 +99,22 @@ export default {
         );
     },
     methods: {
-        ...mapActions(["UPDATE_SCROLL_TARGET"]),
-        handleCheckChange(e,f){
-            console.log(e,f);
+        ...mapActions(["SCROLL_TARGET", "USER_CONFIG"]),
+        thumbSizeChange() {
+            this.USER_CONFIG({
+                thumbSize: this.thumbSize,
+            });
+        },
+        thumbQuilatyChange() {
+            this.USER_CONFIG({
+                thumbQuilaty: this.thumbQuilaty,
+            });
+        },
+        handleCheckChange(e, f) {
+            console.log(e, f);
         },
         scrollToFolder(item) {
-            this.UPDATE_SCROLL_TARGET(item);
+            this.SCROLL_TARGET({ hash: item.hash,action:'scroll-to-img' });
         },
         // ipcRenderer通信传参可以是Promise对象，会自动提取reslove中的数据
         // ipcRenerder传参应先序列化，否则其本身会之行序列化，但效率较低
@@ -193,6 +187,7 @@ export default {
                 .postMessage({
                     cmd: "getFolderList",
                     paths: this.userAlbums,
+                    userConfig:this.userConfig
                 })
                 .then((res) => {
                     // 读取所有图片完毕
@@ -289,9 +284,30 @@ export default {
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-direction: column;
+        padding: 10px;
+        box-sizing: border-box;
         .handle-button {
+            width: 100%;
             display: flex;
             justify-content: center;
+        }
+        .slider {
+            display: flex;
+            box-sizing: border-box;
+            width: 100%;
+            padding: 0 10px;
+            flex-direction: column;
+            .slider-item {
+                display: flex;
+                align-items: center;
+                justify-content: space-around;
+                font-size: 13px;
+                width: 100%;
+                .el-slider {
+                    width: 60%;
+                }
+            }
         }
     }
 

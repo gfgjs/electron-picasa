@@ -7,8 +7,8 @@ import fs from "fs"
 const sharp = require(process.env.NODE_ENV !== 'production' ? '../../../../node_modules/sharp' : 'sharp')
 // import sharp from 'sharp'
 import { hashCode } from '../../../common-tools'
-let thumbnailsPath = '',
-    fileList = []
+let thumbnailsPath = ''
+let fileList = []
 
 self.onmessage = async e => {
     const data = e.data
@@ -30,7 +30,7 @@ self.onmessage = async e => {
                     // 已存在则不再生成缩略图
                     if (!(thumbList.includes(imgName))) {
                         // resize为异步过程，同时处理过多图片会爆
-                        await resizeImg(path, imgName, i)
+                        await resizeImg(path, imgName)
                     }
                 }
             } else {
@@ -41,13 +41,14 @@ self.onmessage = async e => {
     }
 }
 
-function resizeImg(path, imgName, i) {
+function resizeImg(path, imgName) {
     return new Promise((resolve, reject) => {
         const buf = fs.readFileSync(path);
         const img = sharp(buf)
-            .resize(null, 64)
-            .webp({ lossless: false, quality: 1 })
+            .resize(null, 1200)
+            .webp({ lossless: false, quality:80 })
         try {
+            console.log('sharp:'+path);
             img.toFile(thumbnailsPath + '/' + imgName, function (err, info) {
                 // console.log((info.size / 1000) + ' kb')
                 if (err) {
@@ -62,3 +63,4 @@ function resizeImg(path, imgName, i) {
         }
     })
 }
+

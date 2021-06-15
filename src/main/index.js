@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
-import '../renderer/store'
+import vuexStore from '../renderer/store'
 import fs from 'fs'
 import store from './store'
 

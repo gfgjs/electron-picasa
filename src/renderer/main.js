@@ -13,7 +13,10 @@ if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 Vue.http = Vue.prototype.$http = axios
 Vue.config.productionTip = false
 
-Vue.use(VueLazyload)
+Vue.use(VueLazyload,{
+    loading: require('./assets/default.png'),//加载中图片，一定要有，不然会一直重复加载占位图
+    error: require('./assets/default.png')  //加载失败图片
+})
 
 Vue.use(Button)
 Vue.use(Slider)
