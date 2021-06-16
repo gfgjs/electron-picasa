@@ -1,4 +1,5 @@
 import fs from "fs"
+// console.log(fs);
 
 // 处理超过1000张图片时，sharp耗时仅为gm的1/3左右，且sharp不用额外安装软件
 // 开发环境下只能通过相对路径引入sharp，但打包后白屏
@@ -48,7 +49,7 @@ function resizeImg(path, imgName) {
             .resize(null, 1200)
             .webp({ lossless: false, quality:80 })
         try {
-            console.log('sharp:'+path);
+            // console.log('sharp:'+path);
             img.toFile(thumbnailsPath + '/' + imgName, function (err, info) {
                 // console.log((info.size / 1000) + ' kb')
                 if (err) {

@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import vuexStore from '../renderer/store'
 import fs from 'fs'
 import store from './store'
-
+// console.log(fs);
 const userDataPath = app.getPath('userData').replace(/\\/g,'/')
 
 // 创建缩略图目录
