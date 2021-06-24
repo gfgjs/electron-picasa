@@ -1,107 +1,81 @@
 {
-  "name": "epicasa",
-  "version": "0.0.1",
-  "author": "高 <994406788@qq.com>",
-  "description": "An electron-vue project",
-  "license": "GPL-3.0-or-later",
-  "main": "./dist/electron/main.js",
-  "scripts": {
-    "build": "node .electron-vue/build.js && electron-builder",
-    "build:dir": "node .electron-vue/build.js && electron-builder --dir",
-    "build:clean": "cross-env BUILD_TARGET=clean node .electron-vue/build.js",
-    "build:web": "cross-env BUILD_TARGET=web node .electron-vue/build.js",
-    "dev": "node .electron-vue/dev-runner.js",
-    "pack": "npm run pack:main && npm run pack:renderer",
-    "pack:main": "cross-env NODE_ENV=production webpack --progress --colors --config .electron-vue/webpack.main.config.js",
-    "pack:renderer": "cross-env NODE_ENV=production webpack --progress --colors --config .electron-vue/webpack.renderer.config.js",
-    "postinstall": ""
-  },
-  "build": {
-    "productName": "ePicasa",
-    "appId": "io.cm7.epicasa",
-    "directories": {
-      "output": "build"
+    "name": "epicasa-next",
+    "version": "0.0.0",
+    "private": true,
+    "description": "",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ci010/electron-vue-next.git"
     },
-    "files": [
-      "dist/electron/**/*"
+    "scripts": {
+        "dev:docs": "node scripts/dev.docs.js",
+        "dev": "node scripts/dev.js",
+        "build": "node scripts/build.js",
+        "build:dir": "cross-env BUILD_TARGET=dir node scripts/build.js",
+        "build:lite": "cross-env BUILD_TARGET=lite node scripts/build.js",
+        "build:production": "cross-env BUILD_TARGET=production node scripts/build.js",
+        "lint": "eslint --ext .ts,.vue,.js src scripts",
+        "lint:fix": "npm run lint -- --fix",
+        "postinstall": "node ./scripts/dev.install.js"
+    },
+    "author": {
+        "email": "example@email.com",
+        "name": "example"
+    },
+    "license": "MIT",
+    "dependencies": {
+        "electron-store": "^8.0.0",
+        "electron-updater": "^4.3.5",
+        "element-plus": "^1.0.2-beta.52",
+        "pako": "^2.0.3",
+        "promise-worker": "^2.0.1",
+        "sharp": "^0.28.3",
+        "vue": "^3.0.6",
+        "vue-router": "^4.0.10",
+        "vue3-lazy": "^1.0.0-alpha.1",
+        "vuex": "^4.0.2"
+    },
+    "external": [
+        "electron-updater",
+        "fs-extra",
+        "sharp",
+        "electron-store"
     ],
-    "dmg": {
-      "contents": [
-        {
-          "x": 410,
-          "y": 150,
-          "type": "link",
-          "path": "/Applications"
-        },
-        {
-          "x": 130,
-          "y": 150,
-          "type": "file"
-        }
-      ]
+    "devDependencies": {
+        "@rollup/plugin-alias": "^3.1.2",
+        "@rollup/plugin-commonjs": "^19.0.0",
+        "@rollup/plugin-json": "^4.1.0",
+        "@rollup/plugin-node-resolve": "^13.0.0",
+        "@rollup/plugin-typescript": "^8.2.1",
+        "@types/pako": "^1.0.1",
+        "@vitejs/plugin-vue": "^1.2.3",
+        "@vue/compiler-sfc": "^3.0.8",
+        "builtin-modules": "^3.1.0",
+        "chalk": "^4.1.0",
+        "cross-env": "^7.0.2",
+        "electron": "^13.1.2",
+        "electron-builder": "^22.11.7",
+        "esbuild": "^0.12.8",
+        "extract-zip": "^1.7.0",
+        "fs-extra": "^9.0.1",
+        "got": "^9.6.0",
+        "magic-string": "^0.25.7",
+        "rollup": "^2.38.5",
+        "sass": "^1.35.1",
+        "tslib": "^1.14.1",
+        "typescript": "^4.1.2",
+        "vite": "^2.3.7"
     },
-    "mac": {
-      "icon": "build/icons/icon.icns"
-    },
-    "win": {
-      "icon": "build/icons/icon.ico"
-    },
-    "linux": {
-      "icon": "build/icons"
+    "optionalDependencies": {
+        "@types/node": "^14.14.7",
+        "@typescript-eslint/eslint-plugin": "^4.7.0",
+        "@typescript-eslint/parser": "^4.7.0",
+        "eslint": "^7.13.0",
+        "eslint-config-standard": "^14.1.1",
+        "eslint-plugin-import": "^2.22.1",
+        "eslint-plugin-node": "^11.1.0",
+        "eslint-plugin-promise": "^4.2.1",
+        "eslint-plugin-standard": "^4.0.2",
+        "eslint-plugin-vue": "^7.1.0"
     }
-  },
-  "dependencies": {
-    "axios": "^0.18.0",
-    "babel-plugin-component": "^1.1.1",
-    "electron-store": "^8.0.0",
-    "element-ui": "^2.15.2",
-    "promise-worker": "^2.0.1",
-    "sharp": "^0.28.3",
-    "vue": "^2.5.16",
-    "vue-electron": "^1.0.6",
-    "vue-lazyload": "^1.3.3",
-    "vue-router": "^3.0.1",
-    "vuex": "^3.0.1",
-    "vuex-electron": "^1.0.0"
-  },
-  "devDependencies": {
-    "ajv": "^6.5.0",
-    "babel-core": "^6.26.3",
-    "babel-loader": "^7.1.4",
-    "babel-minify-webpack-plugin": "^0.3.1",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-env": "^1.7.0",
-    "babel-preset-stage-0": "^6.24.1",
-    "babel-register": "^6.26.0",
-    "cfonts": "^2.1.2",
-    "chalk": "^2.4.1",
-    "copy-webpack-plugin": "^4.5.1",
-    "cross-env": "^5.1.6",
-    "css-loader": "^0.28.11",
-    "del": "^3.0.0",
-    "devtron": "^1.4.0",
-    "electron": "^13.1.2",
-    "electron-builder": "^22.10.5",
-    "electron-debug": "^3.2.0",
-    "electron-devtools-installer": "^3.2.0",
-    "file-loader": "^1.1.11",
-    "html-webpack-plugin": "^3.2.0",
-    "listr": "^0.14.3",
-    "mini-css-extract-plugin": "0.4.0",
-    "node-loader": "^0.6.0",
-    "node-sass": "^4.9.2",
-    "sass-loader": "^7.0.3",
-    "style-loader": "^0.21.0",
-    "url-loader": "^1.0.1",
-    "vue-html-loader": "^1.2.4",
-    "vue-loader": "^15.2.4",
-    "vue-style-loader": "^4.1.0",
-    "vue-template-compiler": "^2.5.16",
-    "webpack": "^4.15.1",
-    "webpack-cli": "^3.0.8",
-    "webpack-dev-server": "^3.1.4",
-    "webpack-hot-middleware": "^2.22.2",
-    "webpack-merge": "^4.1.3",
-    "worker-loader": "^3.0.8"
-  }
 }
