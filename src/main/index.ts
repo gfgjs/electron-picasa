@@ -8,8 +8,6 @@ import anotherPreload from '/@preload/another'
 import indexHtmlUrl from '/@renderer/index.html'
 import sideHtmlUrl from '/@renderer/preview.html'
 import logoUrl from '/@static/logo.png'
-console.log(123)
-console.log(sideHtmlUrl)
 
 async function main() {
     // const logger = new Logger()
