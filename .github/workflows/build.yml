@@ -20,10 +20,10 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
     - uses: actions/checkout@v2
-    - name: Use Node.js 12
+    - name: Use Node.js 14
       uses: actions/setup-node@v1
       with:
-        node-version: 12
+        node-version: 14
     # - name: Get npm cache directory
     #   id: npm-cache
     #   run: |
@@ -119,7 +119,7 @@ jobs:
     - name: Use Node.js 12
       uses: actions/setup-node@v1
       with:
-        node-version: 12
+        node-version: 14
     - name: Fetch All
       run: git fetch --prune --unshallow
     # - uses: actions/cache@v1
