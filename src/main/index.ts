@@ -9,6 +9,8 @@ import indexHtmlUrl from '/@renderer/index.html'
 import sideHtmlUrl from '/@renderer/preview.html'
 import logoUrl from '/@static/logo.png'
 
+console.log('main')
+
 async function main() {
     // const logger = new Logger()
     // logger.initialize(app.getPath('userData'))
