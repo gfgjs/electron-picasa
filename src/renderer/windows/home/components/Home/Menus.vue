@@ -61,10 +61,10 @@ const { ipcRenderer, dialog } = window.electron
 import PromiseWorker from 'promise-worker'
 
 // 文件处理线程
-import FileWorker from '../../../shared/workers/file?worker'
+import FileWorker from '/@shared/workers/file?worker'
 
 // 图像处理
-import SharpWorker from '../../../shared/workers/sharp?worker'
+import SharpWorker from '/@shared/workers/sharp?worker'
 
 // 页面刷新时，退出程序前，应关闭worker
 const fileWorker = new PromiseWorker(new FileWorker())

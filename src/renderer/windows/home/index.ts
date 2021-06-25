@@ -1,12 +1,12 @@
 import { createApp } from 'vue'
-import Index from './Index.vue'
+import App from './App.vue'
 import router from './router'
 import store from './store'
 import ElementPlus from 'element-plus'
 import 'element-plus/lib/theme-chalk/index.css'
 import lazyPlugin from 'vue3-lazy'
 
-const app = createApp(Index)
+const app = createApp(App)
 
 app.use(router)
 app.use(store)

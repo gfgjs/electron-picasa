@@ -1,6 +1,6 @@
 import { createRouter, createMemoryHistory } from 'vue-router'
-import Home from '/@/components/Home/Home.vue'
-// import About from '/@/components/About.vue'
+import Home from './components/Home/Home.vue'
+// console.log(Home)
 
 const router = createRouter({
     history: createMemoryHistory(),

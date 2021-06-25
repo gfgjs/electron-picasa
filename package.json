@@ -1,11 +1,11 @@
 {
     "name": "epicasa-next",
-    "version": "0.0.0",
+    "version": "0.0.5",
     "private": true,
     "description": "",
     "repository": {
         "type": "git",
-        "url": "https://github.com/ci010/electron-vue-next.git"
+        "url": "https://github.com/gfgjs/electron-picasa.git"
     },
     "scripts": {
         "dev:docs": "node scripts/dev.docs.js",

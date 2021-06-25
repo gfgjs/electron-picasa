@@ -40,7 +40,7 @@ export default {
             // defaultImg: "this.src='" + defaultImg + "'",
             renderList: [],
             timer: 0,
-            stepLength: 50, // 分片渲染片段长度
+            stepLength: 100, // 分片渲染片段长度
             imgStyle: '', // 可以动态改变缩略图大小
         }
     },
@@ -60,7 +60,7 @@ export default {
 
             // 分片渲染，然鹅没啥用，倒是不会卡住几秒，但加载的时间太长了
             this.renderList = []
-            // this.renderDom()
+            this.renderDom()
         },
         // 拖动大小滑条，页面实时缩放，图片多了会卡
         // 'userConfig.thumbSize'(size) {

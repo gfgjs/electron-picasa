@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { createStore, StoreOptions } from 'vuex'
-import bar from './modules/bar'
-import foo from './modules/foo'
+// import bar from './modules/bar'
+// import foo from './modules/foo'
 import render from './modules/render'
 
 export interface RootState {}
@@ -11,8 +11,8 @@ const store: StoreOptions<RootState> = {
     getters: {},
     mutations: {},
     modules: {
-        foo,
-        bar,
+        // foo,
+        // bar,
         render,
     },
 }
