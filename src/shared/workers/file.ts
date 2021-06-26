@@ -1,6 +1,9 @@
 // 读取目录、文件，排序等
 //@ts-nocheck
 const fs = self.require('fs')
+// const es = require('/Users/gf/Desktop/epicasa-next/node_modules/electron-store')
+// console.log(es)
+
 import Pako from 'pako'
 
 import registerPromiseWorker from 'promise-worker/register'
