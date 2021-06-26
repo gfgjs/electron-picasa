@@ -57,10 +57,9 @@ export default {
         list(list) {
             // 一次性渲染
             // this.renderList = list
-
             // 分片渲染，然鹅没啥用，倒是不会卡住几秒，但加载的时间太长了
-            this.renderList = []
-            this.renderDom()
+            // this.renderList = []
+            // this.renderDom()
         },
         // 拖动大小滑条，页面实时缩放，图片多了会卡
         // 'userConfig.thumbSize'(size) {
@@ -78,9 +77,6 @@ export default {
             'height:' +
             this.userConfig.thumbSize * this.userConfig.thumbSizeBase +
             'px'
-
-        // console.log(this.scrollTarget);
-        // console.log(JSON.parse(JSON.stringify(this.list)));
     },
     methods: {
         ...mapActions(['SCROLL_TARGET']),

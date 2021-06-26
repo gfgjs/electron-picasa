@@ -1,6 +1,7 @@
 // 读取目录、文件，排序等
 //@ts-nocheck
 const fs = self.require('fs')
+import Pako from 'pako'
 
 import registerPromiseWorker from 'promise-worker/register'
 import { hashCode } from '../sharedLib'
@@ -61,24 +62,29 @@ registerPromiseWorker(function (message) {
                 // stpe_1 更新相册后读取目录
                 const tree = readdir(message.paths)
                 console.log(
-                    'tree.length:',
+                    '目录数据大小:',
                     JSON.stringify(tree).length / 1000 + 'kb'
+                    // tree
                 )
                 return tree
             case 'getThumbsList':
                 // step_2.1 返回缩略图的hash，开始渲染节点在页面，点击图片可通过hash找到源文件地址
                 console.log(
-                    'ThumbsList.length:',
+                    '缩略图hash大小:',
                     JSON.stringify(store.getThumbsList()).length / 1000 + 'kb'
+                    // Pako.deflate(JSON.stringify(store.getThumbsList()))
                 )
 
                 return store.getThumbsList()
             case 'getFileList':
                 // step_2.2 返回文件数组，并开始生成缩略图
-                // 清除list中的folder-sign（文件夹分割符）
                 let jsonStr = JSON.stringify(store.getFileList())
 
-                console.log('FileList.length:', jsonStr.length / 1000 + 'kb')
+                console.log(
+                    '缩略图路径大小:',
+                    jsonStr.length / 1000 + 'kb'
+                    // store.getFileList()
+                )
 
                 return jsonStr
             default:
@@ -100,6 +106,10 @@ function readdir(paths: {}) {
         store.updateFileTree(i, getFolderContent(path, name))
     }
     console.timeEnd('读取目录耗时')
+    console.log(
+        // store.getFileTree(),
+        JSON.stringify(store.getFileTree()).length / 1000 + 'kb'
+    )
 
     // 从FileTree中提取FolderTree（不包含图片的地址等信息）文件夹的tree显示在菜单栏
 
@@ -151,6 +161,8 @@ function getFolderContent(path: string, name: string) {
     try {
         let obj: any
         const stat = fs.statSync(path)
+        // 访问时间，更改时间，修改时间，创建时间
+        const { atimeMs, ctimeMs, mtimeMs, birthtimeMs, size } = stat
 
         if (stat.isFile()) {
             let ext = path.substr(path.lastIndexOf('.') + 1)
@@ -161,7 +173,11 @@ function getFolderContent(path: string, name: string) {
                     name,
                     path,
                     type: 'file',
-                    // ctimeMs: '',
+                    atimeMs,
+                    ctimeMs,
+                    mtimeMs,
+                    birthtimeMs,
+                    size,
                     hash,
                     //  + '.webp',
                 }
@@ -171,13 +187,9 @@ function getFolderContent(path: string, name: string) {
                 store.updateFileList(path)
                 store.updateThumbsList(hash)
 
-                // obj['ctimeMs'] = stat.ctimeMs
                 return obj
             }
         } else if (stat.isDirectory()) {
-            // const hash = hashCode(path)
-            // store.updateFolderList(path)
-
             const folder = fs.readdirSync(path)
             // 过滤掉没有内容的文件夹
             if (folder.length) {
@@ -185,6 +197,11 @@ function getFolderContent(path: string, name: string) {
                 obj = {
                     name,
                     path,
+                    atimeMs,
+                    ctimeMs,
+                    mtimeMs,
+                    birthtimeMs,
+                    size,
                     children: {},
                     type: 'dir',
                     hash: FOLDER_HASH,
@@ -206,7 +223,7 @@ function getFolderContent(path: string, name: string) {
                     const child = getFolderContent(path + '/' + item, item)
                     child && (obj.children[item] = child)
                 })
-                // obj.ctimeMs = stat.ctimeMs
+
                 return obj
             }
         }
