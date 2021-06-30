@@ -13,6 +13,7 @@ export interface State {
 const mod: Module<State, RootState> = {
     state: {
         scrollTarget: {
+            imgHash: null,
             hash: null, // 目标hash
             target: null, //
         },

@@ -1,32 +1,26 @@
 <template>
-    <div class="file-list" v-if="list">
+    <div class="file-list" id="file-list" v-if="list">
         <template v-for="(item, index) in renderList">
-            <!-- typeof item ==='string'为文件夹分隔符。只有当下一个元素是图片时才渲染这个文件夹分割元素 -->
-            <!-- <div
-                class="folder-sign"
-                v-if="typeof item === 'string'&&typeof list[index+1]==='number'"
-                :key="item + index"
-            ></div> -->
-
-            <template v-if="item > 0 && item < 1000001">
+            <template v-if="typeof item === 'string'">
                 <div
                     class="folder-sign"
-                    :id="item"
+                    :id="item.split('folder-path:')[0]"
                     :key="item"
                     @click="clickTitle(item, index)"
                 >
-                    <!-- 添加属性 :tabindex="item" 可使用 .focus() -->
+                    {{ item.split('folder-path:')[1] }}
                 </div>
             </template>
             <template v-else>
                 <img
-                    v-lazy="thumbnailsPath + item"
+                    :src="thumbnailsPath + item"
                     :key="item"
                     :style="imgStyle"
                     @click="clickImg(item, index)"
                 />
             </template>
         </template>
+        <!-- <div v-html="html"></div> -->
     </div>
 </template>
 <script>
@@ -40,8 +34,9 @@ export default {
             // defaultImg: "this.src='" + defaultImg + "'",
             renderList: [],
             timer: 0,
-            stepLength: 100, // 分片渲染片段长度
+            stepLength: 600, // 分片渲染片段长度
             imgStyle: '', // 可以动态改变缩略图大小
+            html: '',
         }
     },
     watch: {
@@ -57,9 +52,22 @@ export default {
         list(list) {
             // 一次性渲染
             // this.renderList = list
-            // 分片渲染，然鹅没啥用，倒是不会卡住几秒，但加载的时间太长了
-            // this.renderList = []
-            // this.renderDom()
+            this.renderList = []
+            this.renderDom()
+            //     let html = ''
+            //     list.forEach((item) => {
+            //         html += `<img src='${
+            //             this.thumbnailsPath + item
+            //         }' style='box-sizing: border-box;
+            // font-size: 0;
+            // max-width: 98%;
+            // width: auto;
+            // height: auto;
+            // object-fit: contain;
+            // border-radius: 2px;
+            // margin: 2px;'/>`
+            //     })
+            //     document.getElementById('file-list').innerHTML = html
         },
         // 拖动大小滑条，页面实时缩放，图片多了会卡
         // 'userConfig.thumbSize'(size) {
@@ -69,6 +77,8 @@ export default {
         userConfig(config) {
             this.imgStyle =
                 'height:' + config.thumbSize * config.thumbSizeBase + 'px'
+
+            // document.querySelectorAll('.file-list img').style = this.imgStyle
         },
     },
     props: ['list', 'thumbnailsPath'],
@@ -77,16 +87,35 @@ export default {
             'height:' +
             this.userConfig.thumbSize * this.userConfig.thumbSizeBase +
             'px'
+
+        // document.querySelectorAll('.file-list img').style = this.imgStyle
     },
     methods: {
         ...mapActions(['SCROLL_TARGET']),
         clickImg(item, index) {
             // 找到所在目录，并展开在左侧
-            for (let i = index; i >= 0; i--) {
-                const hash = this.renderList[i]
-                if (hash > 0 && hash < 1000001) {
-                    this.SCROLL_TARGET({ hash, action: 'open-tree' })
-                    break
+            let hash
+
+            // 点击了标题栏
+            if (typeof item === 'string') {
+                hash = item.split('folder-path:')[0]
+                this.SCROLL_TARGET({
+                    hash,
+                    action: 'open-tree',
+                })
+            } else {
+                // 点击了图片，从点击处向前查找直到找到文件夹
+                for (let i = index; i >= 0; i--) {
+                    const result = this.renderList[i]
+                    if (typeof result === 'string') {
+                        hash = result.split('folder-path:')[0]
+                        this.SCROLL_TARGET({
+                            hash,
+                            imgHash: item,
+                            action: 'open-tree',
+                        })
+                        break
+                    }
                 }
             }
         },
@@ -120,9 +149,6 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-* {
-    font-size: 0;
-}
 .file-list {
     display: flex;
     flex-wrap: wrap;
@@ -133,15 +159,22 @@ export default {
     scroll-behavior: smooth;
     box-sizing: border-box;
     background-color: #fefefe;
+    transform: translateZ(0);
 
     .folder-sign {
         width: 100%;
-        height: 22px;
+        height: 24px;
         margin: 10px;
         border-radius: 2px;
-        background-color: #efefef;
+        background-color: #ffffff;
+        box-shadow: 0 0 2px 0 #efefef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #444444;
     }
-    img {
+    img,
+    .img {
         box-sizing: border-box;
         font-size: 0;
         max-width: 98%;
@@ -150,6 +183,8 @@ export default {
         object-fit: contain;
         border-radius: 2px;
         margin: 2px;
+        // transform: translateZ(0);
+        // transform: translate3d(0, 0, 0);
     }
 }
 .file-list::-webkit-scrollbar {

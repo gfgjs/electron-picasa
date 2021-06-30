@@ -93,6 +93,21 @@ export default {
         userConfig(e) {
             // console.log({ ...e })
         },
+        scrollTarget(t) {
+            // console.log({ ...t })
+
+            // if (t.action === 'preview') {
+            // 打开预览窗口
+            // fileWorker
+            //     .postMessage({ cmd: 'preview', hash: t.imgHash })
+            //     .then((res) => {
+            ipcRenderer.invoke('window', 'preview', 'show')
+
+            ipcRenderer.invoke('preview', t.imgHash)
+            // console.log(res)
+            // })
+            // }
+        },
     },
     computed: {
         ...mapGetters(['userConfig', 'scrollTarget']),
@@ -120,16 +135,6 @@ export default {
         configChange(key) {
             this.USER_CONFIG({
                 [key]: this.userConfig[key],
-            })
-        },
-        thumbSizeChange() {
-            this.USER_CONFIG({
-                thumbSize: this.userConfig.thumbSize,
-            })
-        },
-        thumbQuilatyChange() {
-            this.USER_CONFIG({
-                thumbQuilaty: this.userConfig.thumbQuilaty,
             })
         },
         handleCheckChange(e, f) {
@@ -223,10 +228,17 @@ export default {
                     this.sendFilesToParent()
                     // 后台创建缩略图
                     this.createThumbs()
+                    // 初始化预览界面数据
+                    this.initPreviewData()
                 })
                 .catch((e) => {
                     console.log(e)
                 })
+        },
+        initPreviewData() {
+            fileWorker.postMessage({ cmd: 'preview-init' }).then((res) => {
+                ipcRenderer.invoke('preview-init', res)
+            })
         },
         sendFilesToParent() {
             fileWorker

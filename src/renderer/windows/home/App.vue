@@ -9,10 +9,22 @@
 import { defineComponent } from 'vue'
 // import Navigator from '/@/components/HomeNavigator.vue'
 // import Navigator from './components/HomeNavigator.vue'
+// import { mapGetters } from 'vuex'
+// import * as ves from 'vuex-electron-store'
+// const ves = require('vuex-electron-store')
+// console.log(electron.ves.default.create())
 
 export default defineComponent({
     components: {
         // Navigator,
+    },
+    watch: {
+        // userConfig(e) {
+        //     console.log({ ...e })
+        // },
+    },
+    computed: {
+        // ...mapGetters(['userConfig']),
     },
 })
 </script>

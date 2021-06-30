@@ -6,11 +6,10 @@ import {
     Dialog,
     IpcRenderer,
 } from 'electron'
-console.log('======================')
 
-import Store from 'electron-store'
-const est = new Store({ name: 'user' })
-console.log(est.get('USER_ALBUMS', 12))
+// import Store from 'electron-store'
+// const est = new Store({ name: 'user' })
+// console.log(est.get('USER_ALBUMS', 12))
 
 console.log('hello world 1st preload!')
 

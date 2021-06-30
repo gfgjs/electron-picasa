@@ -1,15 +1,13 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import './dialog'
 // import { Logger } from './logger'
 import { init } from './services'
 // import createBaseWorker from './workers/index?worker'
 import indexPreload from '/@preload/index'
-import anotherPreload from '/@preload/another'
+// import anotherPreload from '/@preload/another'
 import indexHtmlUrl from '/@renderer/index.html'
 import sideHtmlUrl from '/@renderer/preview.html'
 import logoUrl from '/@static/logo.png'
-
-console.log('main')
 
 async function main() {
     // const logger = new Logger()
@@ -18,9 +16,27 @@ async function main() {
     init()
     app.whenReady().then(() => {
         const main = createWindow()
+        const preview = createSecondWindow()
+        const windows = {
+            main,
+            preview,
+        }
+
+        // main.setPosition(10, 10)
         const [x, y] = main.getPosition()
-        const side = createSecondWindow()
-        side.setPosition(x + 1600 + 5, y)
+        // preview.setPosition(60 + 5, y)
+
+        ipcMain.handle('preview-init', (e, jsonStr) => {
+            preview.webContents.send('preview-init', jsonStr)
+        })
+
+        ipcMain.handle('preview', (e, hash) => {
+            preview.webContents.send('preview', hash)
+        })
+
+        ipcMain.handle('window', (e, target, active) => {
+            windows[target][active]()
+        })
     })
     // thread_worker example
     // createBaseWorker({ workerData: 'worker world' })
@@ -29,12 +45,14 @@ async function main() {
     //     })
     //     .postMessage('')
 }
-
+// Menu.setApplicationMenu(null)
 function createWindow() {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
         height: 1200,
-        width: 1600,
+        width: 1800,
+        // frame: false,
+        fullscreen: true,
         webPreferences: {
             preload: indexPreload,
             contextIsolation: true,
@@ -52,13 +70,15 @@ function createWindow() {
 function createSecondWindow() {
     const sideWindow = new BrowserWindow({
         height: 1200,
-        width: 400,
-        webPreferences: {
-            // preload: anotherPreload,
-            preload: indexPreload,
+        width: 2200,
+        frame: false,
+        show: false,
+        fullscreen: true,
 
-            contextIsolation: true,
-            nodeIntegration: false,
+        webPreferences: {
+            preload: indexPreload,
+            contextIsolation: false,
+            nodeIntegration: true,
             nodeIntegrationInWorker: true,
             webSecurity: false,
         },

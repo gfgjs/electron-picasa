@@ -104,19 +104,23 @@ export function init() {
 
     // 创建缩略图目录
     const userDataPath = app.getPath('userData').replace(/\\/g, '/')
-    const thumbnailsPath = userDataPath + '/thumbnails'
+    const thumbnailsPath = userDataPath + '/thumbnails/'
     !fs.existsSync(thumbnailsPath) && fs.mkdirSync(thumbnailsPath)
 
-    !fs.existsSync(thumbnailsPath + '/small') &&
-        fs.mkdirSync(thumbnailsPath + '/small')
-    !fs.existsSync(thumbnailsPath + '/middle') &&
-        fs.mkdirSync(thumbnailsPath + '/middle')
-    !fs.existsSync(thumbnailsPath + '/large') &&
-        fs.mkdirSync(thumbnailsPath + '/large')
+    !fs.existsSync(thumbnailsPath + 'small') &&
+        fs.mkdirSync(thumbnailsPath + 'small/')
+    !fs.existsSync(thumbnailsPath + 'middle') &&
+        fs.mkdirSync(thumbnailsPath + 'middle/')
+    !fs.existsSync(thumbnailsPath + 'large') &&
+        fs.mkdirSync(thumbnailsPath + 'large/')
 
     // 渲染进程需要的一些工具
     ipcMain.handle('getUserDataPath', (event, key) => {
         return userDataPath
+    })
+
+    ipcMain.handle('getThumbsPath', (event, key) => {
+        return thumbnailsPath
     })
 
     ipcMain.handle('getStoreValue', (event, key) => {

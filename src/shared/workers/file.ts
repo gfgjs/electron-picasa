@@ -4,7 +4,7 @@ const fs = self.require('fs')
 // const es = require('/Users/gf/Desktop/epicasa-next/node_modules/electron-store')
 // console.log(es)
 
-import Pako from 'pako'
+// import Pako from 'pako'
 
 import registerPromiseWorker from 'promise-worker/register'
 import { hashCode } from '../sharedLib'
@@ -90,6 +90,22 @@ registerPromiseWorker(function (message) {
                 )
 
                 return jsonStr
+            case 'preview':
+                // 返回预览文件夹内容
+                // console.log(message, store.getHashForUrlList())
+
+                return store.getHashForUrlList()[message.hash]
+            case 'preview-init':
+                // 初始化预览界面所需数据
+
+                const data = JSON.stringify({
+                    hashList: store.getThumbsList(),
+                    hashForUrlList: store.getHashForUrlList(),
+                })
+                console.log(data.length / 1000 / 1000 + 'Mb')
+                console.log(Date.now())
+
+                return data
             default:
                 return 0
         }
@@ -138,7 +154,7 @@ function calcFolderTreeV2(data: any) {
         const item = data[i]
         if (item) {
             if (item.type === 'dir') {
-                // 不使用{...}而是直接data[i]会改变源对象
+                // 使用{...}以避免改变源对象
                 obj.push({ ...item, children: calcFolderTreeV2(item.children) })
             }
         }
@@ -166,22 +182,22 @@ function getFolderContent(path: string, name: string) {
         const stat = fs.statSync(path)
         // 访问时间，更改时间，修改时间，创建时间
         const { atimeMs, ctimeMs, mtimeMs, birthtimeMs, size } = stat
+        const hash = hashCode(path)
 
         if (stat.isFile()) {
             let ext = path.substr(path.lastIndexOf('.') + 1)
             // console.log(ext);
-            if (ext && 'jpg jpeg gif png'.includes(ext.toLowerCase())) {
-                const hash = hashCode(path)
+            if (ext && 'jpg jpeg gif png'.indexOf(ext.toLowerCase()) >= 0) {
                 obj = {
                     name,
                     path,
-                    type: 'file',
                     atimeMs,
                     ctimeMs,
                     mtimeMs,
                     birthtimeMs,
                     size,
                     hash,
+                    type: 'file',
                     //  + '.webp',
                 }
                 // 图片文件单独一个数组
@@ -196,7 +212,6 @@ function getFolderContent(path: string, name: string) {
             const folder = fs.readdirSync(path)
             // 过滤掉没有内容的文件夹
             if (folder.length) {
-                FOLDER_HASH++
                 obj = {
                     name,
                     path,
@@ -205,22 +220,14 @@ function getFolderContent(path: string, name: string) {
                     mtimeMs,
                     birthtimeMs,
                     size,
-                    children: {},
+                    hash,
                     type: 'dir',
-                    hash: FOLDER_HASH,
+                    children: {},
                 }
 
-                // store.updateFileList('electron-picasa-folder-sign'+name)
-                // 向缩略图列表插入folder-sign（文件夹分隔标志）
-
-                // folder-sign为数字（无法点击菜单中目录名跳转，可保持ThumbsList中只存在Number元素）
-                // store.updateThumbsList(999999999)
-
-                // folder-sign为{}（可以点击菜单中目录名跳转，不可保持ThumbsList中只存在Number元素）
-
-                // 文件夹hash单独计算，为自增的数字，大小上限为1000000，图片的hash至少9位数
                 // 可能出现的问题：更新相册目录时，整体ThumbsList变动，但页面可能不更新？
-                store.updateThumbsList(FOLDER_HASH)
+                store.updateThumbsList(hash + 'folder-path:' + path)
+                store.updateHashForUrlList(hash, 'folder-path')
 
                 folder.forEach((item: any) => {
                     const child = getFolderContent(path + '/' + item, item)

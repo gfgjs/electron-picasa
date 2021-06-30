@@ -3,6 +3,8 @@ import { createStore, StoreOptions } from 'vuex'
 // import bar from './modules/bar'
 // import foo from './modules/foo'
 import render from './modules/render'
+// const es = require('vuex-electron-store')
+// console.log(es.default.create)
 
 export interface RootState {}
 
@@ -15,6 +17,8 @@ const store: StoreOptions<RootState> = {
         // bar,
         render,
     },
+    strict: false,
+    // plugins: [es.default.create()],
 }
-
-export default createStore(store)
+const e = createStore(store)
+export default e
