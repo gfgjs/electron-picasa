@@ -70,17 +70,19 @@ let IMG_SCALE = 0, // 实时比例
 
 /**
  * 原理：
+ *
  * 要放大图片上某一点A(offsetX,offsetY)
  * 先考虑水平方向，图片真实宽度为w；
  * 设点击点offsetX所占一侧宽度的比例 p = offsetX/(w/2)，(由于图片是朝4个方向缩放，所以水平方向只计算一侧，选左侧)
  * 缩放前实际显示宽度为a = w*IMG_SCALE，
  * 缩放后实际显示宽度为b = w*NEW_IMG_SCALE，(NEW_IMG_SCALE = IMG_SCALE + step)
- * 则
+ * 所以
  * 缩放前，目标点到图片中轴线为x = a*(w*scale/2)
  * 缩放后，目标点到图片中轴线为newx = b*(w*scale/2)
- * 所以
+ *
  * 缩放后，目标点发生移动的量为 dx = newx - x
  * 要使点A保持不动，只需将图片整体朝缩放方向 反向 translate dx 像素即可
+ *
  *
  * 经过简化可得：dx = (1 - 2*offsetX/w)*(w*step/2)
  * **/
