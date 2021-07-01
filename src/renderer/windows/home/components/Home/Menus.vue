@@ -90,9 +90,9 @@ export default {
         }
     },
     watch: {
-        userConfig(e) {
-            // console.log({ ...e })
-        },
+        // userConfig(e) {
+        // console.log({ ...e })
+        // },
         scrollTarget(t) {
             // console.log({ ...t })
 

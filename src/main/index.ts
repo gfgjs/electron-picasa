@@ -23,7 +23,7 @@ async function main() {
         }
 
         // main.setPosition(10, 10)
-        const [x, y] = main.getPosition()
+        // const [x, y] = main.getPosition()
         // preview.setPosition(60 + 5, y)
 
         ipcMain.handle('preview-init', (e, jsonStr) => {
@@ -71,8 +71,8 @@ function createSecondWindow() {
     const sideWindow = new BrowserWindow({
         height: 1200,
         width: 2200,
-        frame: false,
-        show: false,
+        // frame: false,
+        // show: false,
         fullscreen: true,
 
         webPreferences: {

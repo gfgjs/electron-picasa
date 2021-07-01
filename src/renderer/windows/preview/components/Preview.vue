@@ -2,7 +2,7 @@
     <div
         class="preview"
         id="preview"
-        @mousewheel.ctrl.exact="mousewheelCtrl"
+        @mousewheel.exact.prevent="mousewheelCtrl"
         @keydown.left="keydownleft"
         @keydown.right="keydownright"
         @keydown.up="keydownup"
@@ -16,7 +16,7 @@
                     :src="imgSrc"
                     alt=""
                     :style="imgStyle"
-                    @mousewheel.exact.prevent="mousewheel"
+                    @mousewheel.ctrl.exact="mousewheel"
                     @mousedown="imgmousedown"
                     @mousemove="imgmousemove"
                     @mouseup="imgmouseup"
@@ -25,14 +25,20 @@
                 />
             </div>
         </div>
-        <div class="bar-list">
+        <div
+            class="bar-list"
+            @mousemove="barmousemove"
+            @mouseup="barmouseup"
+            @mousedown="barmousedown"
+            :style="barStyle"
+        >
             <img
-                v-for="(hash, index) in hashList"
+                v-for="(hash, index) in barList"
                 :key="hash"
                 :src="thumbsPath + hash"
                 alt=""
                 @click="clickBar(hash)"
-                :class="imgIndex == index && 'current'"
+                :class="imgHash == hash && 'current'"
                 ondragstart="return false;"
                 :id="hash"
             />
@@ -94,32 +100,34 @@ export default defineComponent({
             hashList: [],
             hashForUrlList: {},
             thumbsPath: '',
-
+            barList: [],
             // 图片缩放
             defaultTransition: 'linear 0.15s all',
 
             imgIndex: null,
+            imgHash: null,
             imgSrc: '',
             imgStyle: {
                 transform: '',
                 margin: '',
                 transition: '',
             },
+            barStyle: {},
             imgScale: 0,
         }
     },
     async mounted() {
         this.thumbsPath = await ipc.invoke('getThumbsPath')
 
-        // const json = JSON.parse(es.get('jsonStr'))
+        const json = JSON.parse(es.get('jsonStr'))
 
-        // for (let i in json.hashList) {
-        //     const hash = json.hashList[i]
-        //     if (typeof hash === 'number') {
-        //         this.hashList.push(hash)
-        //     }
-        // }
-        // this.hashForUrlList = json.hashForUrlList
+        for (let i in json.hashList) {
+            const hash = json.hashList[i]
+            if (typeof hash === 'number') {
+                this.hashList.push(hash)
+            }
+        }
+        this.hashForUrlList = json.hashForUrlList
 
         ipc.on('preview', (e, hash) => {
             this.imgSrc = this.hashForUrlList[hash]
@@ -143,23 +151,23 @@ export default defineComponent({
             this.initImgPosition()
 
             const hash = this.hashList[index]
+            this.imgHash = hash
+
             this.imgSrc = this.hashForUrlList[hash]
 
-            const dom = document.getElementById(hash)
-
             setTimeout(() => {
+                const dom = document.getElementById(hash)
                 dom &&
                     dom.scrollIntoView({
                         inline: 'center',
                     })
-            })
 
-            // const image = new Image()
-            // image.onload = () => {
-            //     this.handleImg(image)
-            //     image.src = ''
-            // }
-            // image.src = this.imgSrc
+                setTimeout(() => {
+                    let startIndex = index - 50
+                    startIndex = startIndex >= 0 ? startIndex : 0
+                    this.barList = this.hashList.slice(startIndex, index + 51)
+                })
+            })
         },
     },
     methods: {
@@ -193,12 +201,13 @@ export default defineComponent({
                 x,
                 y,
             } = e
-            // console.log({
-            //     offsetX,
-            //     offsetY,
-            //     x,
-            //     y,
-            // })
+
+            console.log({
+                offsetX,
+                offsetY,
+                x,
+                y,
+            })
         },
         showItemInFolder() {
             shell.openPath(this.imgSrc)
@@ -268,6 +277,11 @@ export default defineComponent({
                 this.transform()
             }
         },
+        barmousedown() {},
+        barmousemove(e) {
+            this.util(e)
+        },
+        barmouseup() {},
         imgmousedown(e) {
             imgMoveEnable = true
 
@@ -275,7 +289,6 @@ export default defineComponent({
             imgMoveStartY = e.y
 
             this.imgStyle.transition = ''
-            // this.util(e)
         },
         imgmousemove(e) {
             offsetStartX = e.offsetX

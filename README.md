@@ -3,3 +3,6 @@
 
 就像这样：
 <img width="1920" alt="preview" src="https://user-images.githubusercontent.com/29412548/123366176-51e43900-d5aa-11eb-93fe-3338a5d38d07.png">
+
+
+github 的workflows依赖于package-lock.json，使用yarn的话actions会失败
