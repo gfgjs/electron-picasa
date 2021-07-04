@@ -33,7 +33,7 @@
             :style="barStyle"
         >
             <img
-                v-for="(hash, index) in barList"
+                v-for="hash in barList"
                 :key="hash"
                 :src="thumbsPath + hash"
                 alt=""
@@ -427,12 +427,14 @@ export default defineComponent({
 
         img {
             height: 72px;
+            width: 30px;
             border-radius: 2px;
             margin: 0 2px;
             transition: ease-in 0.09s all;
             box-shadow: 0 0 3px #dfdfdf;
             opacity: 0.6;
             z-index: 0;
+            object-fit: cover;
         }
         img:hover,
         .current {
